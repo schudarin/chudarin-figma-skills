@@ -1,5 +1,0 @@
-interface:
-  display_name: Figma Design System Analyst
-  short_description: Audits Figma files and creates tokenized design-system documentation.
-  icon: figma
-  brand_color: "#7c3aed"

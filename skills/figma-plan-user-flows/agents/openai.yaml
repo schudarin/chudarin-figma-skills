@@ -1,0 +1,7 @@
+interface:
+  display_name: Figma Plan User Flows
+  short_description: Plan screens, states, entry and exit points, and a Figma file structure for a feature before any design starts.
+  icon: figma
+  brand_color: "#1E1E1E"
+policy:
+  allow_implicit_invocation: true

@@ -1,7 +1,0 @@
-interface:
-  display_name: Figma House Rules
-  short_description: Field-tested Figma Plugin API gotchas and verification recipes for agents driving Figma programmatically.
-  icon: figma
-  brand_color: "#1E1E1E"
-policy:
-  allow_implicit_invocation: true
