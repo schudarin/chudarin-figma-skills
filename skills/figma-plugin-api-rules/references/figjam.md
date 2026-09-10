@@ -3,7 +3,7 @@ name: figma-plugin-api-rules/figjam
 description: Read when working in a FigJam board (/board/) — pasting images, stale reads
 ---
 
-# figjam — use_figma gotchas
+# figjam — use_figma rules
 
 ### use-figma-stale-reads-after-mutation
 _Core: full text — `../SKILL.md`. Applies to FigJam boards exactly as to design files._

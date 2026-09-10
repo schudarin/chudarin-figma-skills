@@ -3,7 +3,7 @@ name: figma-plugin-api-rules/components-and-variants
 description: Read when working with COMPONENT / COMPONENT_SET — creating components, combineAsVariants, the variant grid, componentPropertyDefinitions / addComponentProperty, setProperties, deleting properties, dissolving sets
 ---
 
-# components-and-variants — use_figma gotchas
+# components-and-variants — use_figma rules
 
 ### variant-swap-reveals-extra-slots-avoids-instance-insertion
 **Principle:** When one more element (a button/field) must be added inside an INSTANCE boundary and a direct structural insertion (`insertChild`/`appendChild`) fails with `Cannot move node. New parent is an instance or is inside of an instance` — before detaching (see `nested-instance-boundaries-need-individual-detach` in `instances.md`), check the `componentPropertyDefinitions` of the nearest variant component for an axis with MORE slots (e.g. `Actions: Single|Double|Triple` on the wrapper over the buttons). If such a variant exists, `instance.setProperties({Actions:'Double'})` gives 2 ready button slots (initially with the master's placeholder content — `Label`/`Icon/asterisk`) WITHOUT a single structural mutation inside the instance — all that remains is configuring each slot (`setProperties` on Style/Size/Type + retext + INSTANCE_SWAP icons).
@@ -226,7 +226,7 @@ txt.componentPropertyReferences = { characters: 'Label#xx:y' };
 ```
 
 ### setproperties-orphaned-prop-silent-noop
-**Adjacent gotcha (don't confuse):** `orphaned-component-props-no-render` above — that case is solved through a nested INSTANCE with its own key; this one — the target is a direct TEXT node with empty `componentPropertyReferences`; the fix differs (mutate `characters` directly, not search for a nested instance).
+**Adjacent rule (don't confuse):** `orphaned-component-props-no-render` above — that case is solved through a nested INSTANCE with its own key; this one — the target is a direct TEXT node with empty `componentPropertyReferences`; the fix differs (mutate `characters` directly, not search for a nested instance).
 **Principle:** If a text component prop is orphaned (the TEXT node's `componentPropertyReferences` is empty), `setProperties` writes the value into `componentProperties` but the render doesn't change — find the real TEXT node by type/name and mutate `characters` directly.
 **Symptom:** `componentProperties` shows the prop's new value, but the render shows the old text.
 **Pattern:** the canonical text edit: `findOne(TEXT by name)` → `getStyledTextSegments(['fontName'])` → `loadFontAsync` per segment → `characters = value`.
@@ -370,7 +370,7 @@ if (btn.componentProperties['State'].value !== 'Default') {
   btn.setProperties({ State: 'Default' });
 }
 ```
-**Adjacent gotcha (don't confuse):** `variant-switch-retains-matching-property-overrides` (the core SKILL.md) — that one is about keeping a FOREIGN override value of a matching property from the previous variant; this one is about a silent RESET to the set's default on an unspecified axis. The symptom is similar (an unexpected state after the swap); the cause is the opposite.
+**Adjacent rule (don't confuse):** `variant-switch-retains-matching-property-overrides` (the core SKILL.md) — that one is about keeping a FOREIGN override value of a matching property from the previous variant; this one is about a silent RESET to the set's default on an unspecified axis. The symptom is similar (an unexpected state after the swap); the cause is the opposite.
 Verified on a production admin dashboard, one of the sections (a nested section with a form, a delete-confirm modal — the "Delete" button after `Type: 'Negative'` got `State: 'Disabled'` instead of `'Default'`).
 
 ### combineasvariants-auto-positions-siblings-side-by-side
@@ -542,7 +542,7 @@ Verified on a production admin dashboard, a `table cell` table (`9269:12387`) on
 ### api-created-frames-block-component-property-references
 **Principle:** `componentPropertyReferences` can't be set on frames created via the API (`createFrame`/`createAutoLayout`) — the attempt throws "Can only set component property references on symbol sublayer".
 **Pattern:** keep the binding on the component's original child node (the symbol sublayer), and control visibility/structure by hand (e.g. collapsing a HUG frame — see `createautolayout-default-size-hug-collapse` in the core SKILL.md), not via `componentPropertyReferences` on an API-created container.
-_(moved from the core SKILL.md — it was nested inside an unrelated gotcha about HUG collapse)_
+_(moved from the core SKILL.md — it was nested inside an unrelated rule about HUG collapse)_
 
 ### componentpropertyreferences-scope-limited-to-visible-characters-instance-swap
 **Principle:** `componentPropertyReferences` supports binding only for `visible` / `characters` / instance-swap — effects like a font swap, a transparent background, opacity are NOT bindable through this mechanism, even if a boolean component property was created for them.

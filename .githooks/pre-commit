@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Publication guard — FAIL CLOSED. Blocks a commit whose staged additions carry
+# private identifiers or raw Figma keys. Generic patterns live here; your own
+# names go in .githooks/patterns.local (git-ignored, see patterns.example).
+# If the scan itself errors, the commit is blocked. Bypass only deliberately:
+#   git commit --no-verify
+set -u
+GENERIC='figma\.com/(design|file|board)/[A-Za-z0-9]{20,}|lk-[0-9a-f]{20,}|VariableID:[0-9a-f]{20,}/|[A-Za-z0-9._-]+@[A-Za-z0-9-]+\.[a-z]{2,}|figd_[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10,}'
+LOCAL=""
+if [ -f "$(dirname "$0")/patterns.local" ]; then LOCAL=$(grep -v '^#' "$(dirname "$0")/patterns.local" | grep -v '^$' | paste -sd'|' -); fi
+export GUARD_PATTERNS="$GENERIC${LOCAL:+|$LOCAL}"
+added=$(git diff --cached -U0 -- . ':!.githooks/' | grep '^+' | grep -v '^+++') || added=""
+hits=$(printf '%s\n' "$added" | perl -ne 'print if /$ENV{GUARD_PATTERNS}/i' 2>/tmp/guard-scan.err); rc=$?
+if [ "$rc" -ne 0 ] || [ -s /tmp/guard-scan.err ]; then echo "✖ pre-commit: scanner failed — blocking to be safe:" >&2; cat /tmp/guard-scan.err >&2; exit 1; fi
+hits=$(printf '%s\n' "$hits" | grep -v 'noreply@anthropic.com' || true)
+if [ -n "$hits" ]; then
+  echo "✖ pre-commit: staged lines look like private identifiers or raw Figma keys:" >&2
+  printf '%s\n' "$hits" | head -20 >&2
+  echo "Scrub them (or, if this is a deliberate placeholder, commit with --no-verify)." >&2
+  exit 1
+fi
+exit 0

@@ -225,7 +225,7 @@ for (const surface of ["fills","strokes"]) {
 
 Try deleting orphaned local variables and collections. Silent failures expected — `variable.remove()` no-ops if anything still references it.
 
-## Gotchas
+## Pitfalls
 
 1. **Team-licensed fonts** absent from the plugin sandbox can't be loaded via `figma.loadFontAsync`, but you can still bind variables to them with `setBoundVariable`.
 2. **`fontStyle`** = STRING weight name ("Bold"); **`fontWeight`** = FLOAT (700). Libraries typically use `fontStyle`.

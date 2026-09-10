@@ -1,6 +1,6 @@
 ---
 name: figma-plugin-api-rules
-description: MANDATORY prerequisite before any programmatic Figma write — use_figma, create_new_file, Plugin API scripts. Field-tested gotchas and patterns for the Figma Plugin API — nodes, auto-layout, components and variants, instances, text and fonts, variables and modes, connectors, annotations, FigJam, and the MCP tool layer — plus verification recipes so silent failures get caught. Load it in addition to your tool's own instructions for calling the Figma API (figma-use or its MCP-resource equivalent); it complements them, never replaces them. Do not load for tasks that don't touch Figma.
+description: MANDATORY prerequisite before any programmatic Figma write — use_figma, create_new_file, Plugin API scripts. Field-tested pitfalls and patterns for the Figma Plugin API — nodes, auto-layout, components and variants, instances, text and fonts, variables and modes, connectors, annotations, FigJam, and the MCP tool layer — plus verification recipes so silent failures get caught. Load it in addition to your tool's own instructions for calling the Figma API (figma-use or its MCP-resource equivalent); it complements them, never replaces them. Do not load for tasks that don't touch Figma.
 ---
 
 # Figma Plugin API Rules
@@ -22,7 +22,7 @@ Accumulated, field-tested knowledge of the Figma Plugin API as driven through an
    - `layoutMode` · `layoutSizing*` · `primaryAxisSizingMode` · `resize(` · `insertChild` · `clone()` → `references/layout-and-geometry.md`
    - `connectorStart` · `connectorEnd` → `references/connectors.md` · `annotations` → `references/annotations.md`
    - `get_metadata` on a page · `findAll` over a page · `exportAsync` · `get_screenshot` for verification → `references/mcp-and-environment.md`
-   One read per file per session is enough. Skipping it is how a session re-discovers a documented gotcha the hard way — a 2-hour run that never opened `instances.md` hit `swapComponent` returning `void`, a stale child id after `setProperties`, and a hidden instance child "unreachable" — all three are in that file.
+   One read per file per session is enough. Skipping it is how a session re-discovers a documented rule the hard way — a 2-hour run that never opened `instances.md` hit `swapComponent` returning `void`, a stale child id after `setProperties`, and a hidden instance child "unreachable" — all three are in that file.
 5. **Prologue for any write batch:** `await figma.setCurrentPageAsync(page)` before the first mutation, and load every font the batch touches. Both are easy to forget and both fail opaquely mid-batch — a wrong-page mutation or an unloaded-font write doesn't say so, it just throws.
 6. **Atomic operations — never leave a node half-applied.** For multi-property rebinds, apply so that if part fails the rest is not left changed. Verify the whole set landed before moving on.
 7. **Read the result back inside the same call.** Return `{createdNodeIds, mutatedNodeIds, before, after}`, resolving variable ids to **names** in `before`/`after`. A raw variable id tells you nothing when checking; a name lets you spot a wrong binding on sight. Many failures are silent: library-swatch bindings, `cornerRadius` bindings, layout sizing — read back, don't assume.
@@ -255,10 +255,10 @@ If you accumulate facts about one specific Figma file (Set IDs / Page IDs of par
 
 ## Protocol for recording a new insight
 
-The pack lives best with a single writer at any moment — if several people or agents append a new gotcha in parallel copies, versions diverge and duplicates have to be reconciled by hand. If several AI tools read the pack at once, agree that only one of them (or one person) writes to it; the others read and pass findings to that single writer — cheaper than untangling conflicting versions of the same fact later.
+The pack lives best with a single writer at any moment — if several people or agents append a new rule in parallel copies, versions diverge and duplicates have to be reconciled by hand. If several AI tools read the pack at once, agree that only one of them (or one person) writes to it; the others read and pass findings to that single writer — cheaper than untangling conflicting versions of the same fact later.
 
 1. **Classify:** a universal API principle → the topical `references/*.md`; a fact about one specific Figma file → its own `references/files/<file>.md` (not part of this shared pack); a process pattern not specific to the Figma API → your team's general rules, not here.
-2. **Append** the gotcha as a `### slug` section AT THE END of the topical file (format: Principle / Symptom / Pattern / code).
+2. **Append** the rule as a `### slug` section AT THE END of the topical file (format: Principle / Symptom / Pattern / code).
 3. **New topic** → new file + a row in the routing table above, IN THE SAME COMMIT.
-4. **A gotcha that fired a third time in different contexts** → move the entry here, into "Universal principles", leaving a stub in the topic file in exactly this form: _Core: full text — `../SKILL.md`._ Exception: a gotcha describing a universal Plugin API principle not tied to a specific project (as opposed to a fact about one file) may be promoted on the first clear occurrence; the "three times in different contexts" threshold is mandatory only for patterns whose universality isn't obvious from one case.
+4. **A rule that fired a third time in different contexts** → move the entry here, into "Universal principles", leaving a stub in the topic file in exactly this form: _Core: full text — `../SKILL.md`._ Exception: a rule describing a universal Plugin API principle not tied to a specific project (as opposed to a fact about one file) may be promoted on the first clear occurrence; the "three times in different contexts" threshold is mandatory only for patterns whose universality isn't obvious from one case.
 5. **Commit at once,** as a separate commit from the task in hand — it is easy to forget the pack change by committing only the task.

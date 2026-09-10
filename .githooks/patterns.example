@@ -1,0 +1,4 @@
+# One perl regex per file, single line. Copy to patterns.local (git-ignored) and
+# add your own employer/client names, project code names and Figma file keys.
+# The generic part below is always applied in addition to patterns.local.
+acme|internal-codename

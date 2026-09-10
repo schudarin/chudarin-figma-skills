@@ -27,7 +27,7 @@ What looks like an unfinished detail in this product but is actually the style.
 ## In progress
 What's being worked on, what's next.
 
-## Project gotchas
+## Project pitfalls
 Anything about this specific project's tools or setup that cost time once.
 ```
 
@@ -59,7 +59,7 @@ ASCII texture on empty state → "ASCII не наш вариант, дизер �
 ## In progress
 Reader settings sheet — typography controls done, color controls next.
 
-## Project gotchas
+## Project pitfalls
 The Figma bridge hangs after long write sessions — work in small calls, not one long batch.
 ```
 
@@ -80,6 +80,6 @@ The two rejected lines above are real, kept in the user's own language on purpos
 | The "everything present" check (`references/checks.md`) | the screen's task list, carried in the brief, not this file |
 | The "accuracy" check (`references/checks.md`) | Settings — design system, tokens |
 | The "product style" check (`references/checks.md`) | Signature traits + the screenshots under Approved |
-| The orchestrator after a context loss | In progress, Project gotchas |
+| The orchestrator after a context loss | In progress, Project pitfalls |
 
 This is why the six sections don't collapse into fewer: each reader needs a different slice, and a reader that only needs `Signature traits` shouldn't have to load `In progress` to get it.

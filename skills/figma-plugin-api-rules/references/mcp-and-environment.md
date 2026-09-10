@@ -3,7 +3,7 @@ name: figma-plugin-api-rules/mcp-and-environment
 description: Read when actively orchestrating use_figma and the MCP read tools — node lookup (query/findOne), pages, rate limits, subagents, screenshots/export, response truncation, verification recipes, visual regression
 ---
 
-# mcp-and-environment — use_figma gotchas
+# mcp-and-environment — use_figma rules
 
 ### node-query-no-spaces-in-names
 _Core: full text — `../SKILL.md`._
@@ -271,7 +271,7 @@ curl -s -H "X-Figma-Token: $FIGMA_REST_API_TOKEN" \
   "https://api.figma.com/v1/images/$KEY?ids=9259-3575,9277-4702&format=png&scale=2"
 # → {"images":{"9259:3575":"https://…"}}; the id in the query uses a hyphen, in the response a colon
 ```
-A separate gotcha of the same REST: for some **SECTION** nodes it stably returns `null` in `images` (three times in a row, with `err: null`), while the FRAMEs nested in them render at once. Render frames, not the section.
+A separate rule of the same REST: for some **SECTION** nodes it stably returns `null` in `images` (three times in a row, with `err: null`), while the FRAMEs nested in them render at once. Render frames, not the section.
 Verified on a production admin dashboard — four `get_screenshot` calls in a row returned 1×1; REST returned all seven frames; the first renders of the whole initiative revealed a clipped CTA button on two promoted screens, invisible in property reads.
 
 ### findall-returns-a-partial-subtree-count-with-an-explicit-dfs
@@ -356,7 +356,7 @@ Verified on a paywall-redesign task — the raster `4086:10952` (`mobile_paywall
 **Principle:** Before going to ANOTHER Figma file for a structure/pattern "donor" — search for existing material across the WHOLE page of the current file (`figma.currentPage.children` in full, not only the catalogued sections), not only inside the named sections documented in the task's own registry (`figma_node_registry.md` or its analogue). The registry documents what someone deliberately wrote into it — orphaned nodes detached from sections (e.g. a forgotten draft html-to-figma import) aren't covered by the registry and aren't found by the usual per-section search.
 **Symptom:** full, exact, reuse-ready material (a real capture of the very same page) lies right in the current file — but outside the x/y range of the catalogued sections, a top-level child of the page — and isn't found, because the search went "by the registry", not by the raw page tree. The solution is sought in an EXTERNAL file, although inside it was better and closer.
 **Pattern:** one read-only call `figma.currentPage.children.map(n => ({id, name, x, y, width, height}))` before deciding "an external donor is needed" — especially if an html-to-figma import was clearly used elsewhere in the file (sign: other nodes named like `div.xxx`, generic `Background`/`Container`/`SVG`, traces of `Helvetica Neue`).
-Verified on a paywall-redesign task — a full, real capture of the page (`4210:1227`, 479 nodes: payment method, free-trial checkbox, Compare Features, Testimonials) lay on the same `🖼️ Design` page as `mobile_paywall`, outside the `Paywall` section, unfound until the user pointed at it explicitly — while before that a from-scratch rebuild with a reference from ANOTHER file had already been done (and rejected) (see the gotcha `use_figma-single-filekey-per-call-no-cross-file-clone` above), although more exact material was one search step away.
+Verified on a paywall-redesign task — a full, real capture of the page (`4210:1227`, 479 nodes: payment method, free-trial checkbox, Compare Features, Testimonials) lay on the same `🖼️ Design` page as `mobile_paywall`, outside the `Paywall` section, unfound until the user pointed at it explicitly — while before that a from-scratch rebuild with a reference from ANOTHER file had already been done (and rejected) (see the rule `use_figma-single-filekey-per-call-no-cross-file-clone` above), although more exact material was one search step away.
 
 ### new-node-default-constraints-not-center-drifts-on-later-ancestor-resize
 **Principle:** A node created with `createVector()`/`createFrame()`/etc. and centred by hand via an explicit `node.x = (parent.width - node.width) / 2` (and likewise `y`) keeps its centring only while its `constraints` are `CENTER/CENTER`. By default new nodes are created with `constraints: {horizontal: 'MIN', vertical: 'MIN'}` — visually indistinguishable from centring at that moment (both give the same `x`/`y` right after assignment), but `MIN/MIN` keeps the node glued to the parent's LEFT/TOP edge on any subsequent parent resize, not to the centre. If, after the manual centring, somewhere further in the same or later scripts the parent (or a more distant ancestor via an auto-layout cascade) changes size even once — a `MIN/MIN` node slides from the centre to the edge, although it looked centred at creation.

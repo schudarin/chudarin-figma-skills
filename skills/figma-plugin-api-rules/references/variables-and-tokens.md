@@ -3,7 +3,7 @@ name: figma-plugin-api-rules/variables-and-tokens
 description: Read when binding variables/tokens — figma.variables, setBoundVariableForPaint, per-corner radius and per-paint colour bindings, collections and modes, tinted fills, library vs local files
 ---
 
-# variables-and-tokens — use_figma gotchas
+# variables-and-tokens — use_figma rules
 
 ### token-name-vs-actual-value
 **Principle:** A variable/token's name may not match its real value — check the token's actual value before use; don't guess from the name.

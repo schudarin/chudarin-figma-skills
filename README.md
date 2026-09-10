@@ -8,7 +8,7 @@ of the work, built and refined on real product files.
 | Plan | `figma-plan-user-flows` | Maps screens, states, entry/exit points and a Figma file structure before any design starts |
 | Understand | `figma-audit-design-system` | Read-only audit of an existing design system: components, tokens, patterns, debt, documentation pages |
 | Design | `figma-design-screens` | The process for designing or changing product screens: style source, briefs, checks, editing approved work one element at a time |
-| Execute | `figma-plugin-api-rules` | 390+ field-tested Figma Plugin API gotchas and verification recipes — load before any `use_figma` call |
+| Execute | `figma-plugin-api-rules` | 390+ field-tested Figma Plugin API pitfalls and verification recipes — load before any `use_figma` call |
 | Repair | `figma-fix-variable-bindings` | Scan → resolve → rebind detached, orphaned and hardcoded variable bindings |
 
 Every skill is plain Markdown: `SKILL.md` + `references/` + `agents/openai.yaml` for Codex.

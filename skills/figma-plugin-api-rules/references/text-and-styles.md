@@ -3,7 +3,7 @@ name: figma-plugin-api-rules/text-and-styles
 description: Read when working with TEXT nodes — fonts and font loading, loadFontAsync, textStyleId, figma.mixed, letterSpacing, truncation, measuring text width
 ---
 
-# text-and-styles — use_figma gotchas
+# text-and-styles — use_figma rules
 
 ### fonts-bind-dont-load-and-binding-wont-always-rescue-you
 **Principle:** Apply DS text styles by binding, never by installing/loading fonts. **But** when a licensed font is absent from the MCP sandbox (a team-licensed font), `loadFontAsync`, `setTextStyleIdAsync`, AND `setBoundVariable('fontFamily', …)` all fail — binding does **not** rescue you. Author the text in **Inter** matched to the DS spec (sizes/weights/line-heights), then tell the user to select-all in desktop and apply the real text styles. Don't burn passes retrying font loads.

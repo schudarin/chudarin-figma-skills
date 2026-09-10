@@ -1,6 +1,6 @@
 # figma-plugin-api-rules
 
-A field-tested knowledge base of Figma Plugin API gotchas and patterns, written for
+A field-tested knowledge base of Figma Plugin API pitfalls and patterns, written for
 agents that drive Figma through `use_figma`-style programmatic calls — nodes, auto-layout,
 components and variants, instances, text and fonts, variables and modes, connectors,
 annotations, FigJam, and the MCP tool layer. Every entry is a real case that broke
@@ -11,7 +11,7 @@ exactly this way, written up as Principle / Symptom / Pattern — not a reading 
 - `SKILL.md` — the core: hard rules, the most frequently recurring universal API
   principles, a routing table by topic, a quick-scan table of common mistakes, and the
   protocol for adding to the pack.
-- `references/*.md` — gotchas by topic (components and variants, instances, layout and
+- `references/*.md` — pitfalls by topic (components and variants, instances, layout and
   geometry, text and styles, variables, connectors, annotations, publishing hygiene,
   FigJam, the tool layer / environment, building a screen from code).
 
@@ -36,7 +36,7 @@ an ordinary context file you hand to the agent before Figma work.
 ## How to add to it
 
 See "Protocol for recording a new insight" at the end of `SKILL.md`. In short: a new
-gotcha is a `### slug` section at the end of the relevant topic file; facts about one
+rule is a `### slug` section at the end of the relevant topic file; facts about one
 specific Figma file (Set IDs, Page IDs, local quirks) go into your own
 `references/files/<file>.md`, which is not part of this shared pack and shouldn't travel
 with it.

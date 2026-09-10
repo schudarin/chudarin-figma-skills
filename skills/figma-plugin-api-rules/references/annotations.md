@@ -3,7 +3,7 @@ name: figma-plugin-api-rules/annotations
 description: Read when working with Dev Mode annotations (node.annotations, figma.annotations) — not to be confused with Figma Comments (REST API)
 ---
 
-# annotations — use_figma gotchas
+# annotations — use_figma rules
 
 ## Universal principles
 
@@ -151,7 +151,7 @@ const hasAnnotation = annotated.length > 0;
 Verified on a product mobile-app file — an independent review claimed the annotation wasn't built on any of 3 surfaces ("no annotations"); a repeat check on the same file found all three annotations in place, on the nested `dragdrop_block`/`entry_list`, not on the root sheet node, which apparently was what got checked directly.
 
 ### annotation-writes-via-getnodebyidasync-need-no-page-switch
-**Principle:** `figma.getNodeByIdAsync(id)` + a direct property mutation (`node.annotations = [...]`, `node.characters`, any setter) works without `await figma.setCurrentPageAsync(...)`, regardless of which page the node physically lies on — `setCurrentPageAsync` is needed only for page-relative operations (`figma.currentPage.appendChild`, `page.findAll`, `page.children`), not for a targeted read/write by an already-known id. This is separate from the gotcha `cross-page-appendchild-moves-node` (that one is about moving a node BETWEEN pages via `targetPage.appendChild`); here it's about a targeted edit WITHOUT a move.
+**Principle:** `figma.getNodeByIdAsync(id)` + a direct property mutation (`node.annotations = [...]`, `node.characters`, any setter) works without `await figma.setCurrentPageAsync(...)`, regardless of which page the node physically lies on — `setCurrentPageAsync` is needed only for page-relative operations (`figma.currentPage.appendChild`, `page.findAll`, `page.children`), not for a targeted read/write by an already-known id. This is separate from the rule `cross-page-appendchild-moves-node` (that one is about moving a node BETWEEN pages via `targetPage.appendChild`); here it's about a targeted edit WITHOUT a move.
 **Symptom:** the intuitive (and superfluous) urge to group a batch of annotations/targeted edits by page and make one `use_figma` call per page — while the `figma-use` skill's rule "one setCurrentPageAsync per call" concerns the operations THIS call does via `figma.currentPage`, not any call touching several pages.
 **Pattern:** one script can walk a list of ids from different pages and write/read a property of each pointwise — without a single `setCurrentPageAsync`, if the only operation is `getNodeByIdAsync` + a mutation/read of the node's own property.
 ```js
