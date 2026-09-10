@@ -7,7 +7,7 @@ not repeated here; it lives whole in `references/checks.md`, run at step 4.
 
 ## Why the self-check lives inside the template, not next to it
 
-RED-phase baseline: a brief mandated an identical tab bar across three requested Library variants.
+RED-phase baseline: a brief mandated an identical tab bar across three requested list-screen variants.
 The agent that wrote it diagnosed the failure afterward, correctly, without being told:
 
 > Root cause was MY brief (I mandated the identical tab bar for all three) — but the fix is yours.
@@ -34,8 +34,8 @@ nine self-checks embedded at the block each one governs, follows in the next sec
    to avoid," a different claim from "I checked."
    *Example: "You are a mobile screen designer working in Figma. A previous pass on this screen
    was rejected — the user's words: 'the buttons all look the same, I can't tell what's
-   tappable.' Also on file in design.md's Rejected section: 'ASCII не наш вариант, дизер точно
-   лучше' (empty-state texture, 2026-08-02) — do not propose ASCII texture here either."*
+   tappable.' Also on file in design.md's Rejected section: 'ASCII isn't us, dither is
+   closer' (empty-state texture) — do not propose ASCII texture here either."*
 
 2. **Skills to load, minimal stack, in order.** `figma-use`, `figma-plugin-api-rules`, and exactly one
    visual skill for the task type (`SKILL.md`, "Minimum skill stack") — never the whole shelf.
@@ -45,12 +45,12 @@ nine self-checks embedded at the block each one governs, follows in the next sec
 3. **References, as absolute file paths, with an instruction to look at all of them.** A path the
    agent might skip is a reference that might as well not exist.
    *Example: "Look at every file below, all four, before building anything:
-   /Users/.../design-shots/library-grid-2026-08-04.png, /Users/.../design.md, ... Node 443:203 in
+   <repo>/.claude/design-shots/accounts-list-2026-01-14.png, <repo>/.claude/design.md, ... Node <id> in
    the Figma file is the screen to clone from — open it first."*
 
 4. **Work zone and forbidden zones.** Name the frame or page the agent may edit, and what it may
    not touch — other pages, other frames, shared components used elsewhere.
-   *Example: "Work only inside frame 'Settings/Draft'. Do not touch the Library page or any node
+   *Example: "Work only inside frame 'Settings/Draft'. Do not touch the Accounts page or any node
    also used by an existing screen — check Instances before editing a component."*
 
 5. **Design system as material that isn't free.** Colors from variables, type from text styles —
@@ -204,8 +204,8 @@ yes to seeing options.
   **This list becomes the synthesized screen's task list for the Completeness check.** A
   synthesized screen has no brief of its own to check item-by-item against — without this list,
   Completeness has nothing to count against, and a dropped element passes silently. This is the
-  exact failure the check exists to catch: a synthesized Library screen passed every gate and
-  shipped without its add-to-library button, because nothing on record said the button had to
+  exact failure the check exists to catch: a synthesized list screen passed every gate and
+  shipped without its primary add button, because nothing on record said the button had to
   survive the merge.
 
 ## The mechanic brief — cheaper model tier
@@ -288,7 +288,7 @@ the recipe each dispatched task carries, not a separate document an agent has to
 **What this never applies to: the brief to the design agent, and the critic's findings.** The
 session's first rejected concept came from exactly this mistake made in the wrong place — a brief
 that was a structural checklist in words, no pictures, run on an economy model. The user's verdict:
-"стили меняются, а дизайн толком нет, печально, не современно." `caveman`, or any other
+"the styles change but the design barely does — sad, and not modern." `caveman`, or any other
 compression, is fair game only for the mechanic's status reports and the log lines in `design.md`
 — never for the brief above, and never for a critic's findings, which are useless without the node
 id and the number attached.

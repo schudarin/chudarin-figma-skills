@@ -31,15 +31,15 @@ What's being worked on, what's next.
 Anything about this specific project's tools or setup that cost time once.
 ```
 
-## Filled example — xreadr
+## Filled example — a personal-finance app, invented
 
 ```markdown
-# Design — xreadr
+# Design — Ledger
 
 ## Settings
 Design system: no
-References: existing screens (Library, Reader)
-Figma file: key abc123, pages "Library", "Reader", "Settings"
+References: existing screens (Accounts, Transactions)
+Figma file: key <file-key>, pages "Accounts", "Transactions", "Settings"
 Models: default from the skill
 
 ## Signature traits
@@ -50,25 +50,25 @@ Orange only on live/dynamic values, never on buttons.
 ## Approved
 | Screen | Where in Figma | Screenshot | Date |
 |---|---|---|---|
-| Library — grid view | Library page, frame "Library/Grid" | design-shots/library-grid-2026-08-04.png | 2026-08-04 |
+| Accounts — list | Accounts page, frame "Accounts/List" | design-shots/accounts-list-2026-01-14.png | 2026-01-14 |
 
 ## Rejected — do not suggest again
-Rounded 52px controls on Library → "пропал стиль, стало из чужого мира", 2026-08-03
-ASCII texture on empty state → "ASCII не наш вариант, дизер точно лучше", 2026-08-02
+Rounded 52px controls on Accounts → "the style is gone, this is from a different world", 2026-01-13
+ASCII texture on empty state → "ASCII isn't us, dither is closer", 2026-01-12
 
 ## In progress
-Reader settings sheet — typography controls done, color controls next.
+Transaction filters sheet — date range done, category picker next.
 
 ## Project pitfalls
 The Figma bridge hangs after long write sessions — work in small calls, not one long batch.
 ```
 
-The two rejected lines above are real, kept in the user's own language on purpose — see the quoting rule below.
+Rejected lines stay in whatever language the user spoke, untranslated — see the quoting rule below.
 
 ## Rules for keeping the file
 
 - **Append decisions, not actions.** One line per thing that got accepted or rejected. A log of every action taken grows without bound and stops being readable; a log of decisions only grows when something was actually decided.
-- **`Rejected` is a verbatim quote from the user, not a paraphrase.** The reason matters more than the fact of rejection: "стало из чужого мира" tells the next agent *why* the same idea can't be tried again with different wording; a paraphrase like "user didn't like it" throws that away.
+- **`Rejected` is a verbatim quote from the user, not a paraphrase.** The reason matters more than the fact of rejection: "this is from a different world" tells the next agent *why* the same idea can't be tried again with different wording; a paraphrase like "user didn't like it" throws that away.
 - **Screenshots of approved work go in the project's repository (`<project>/.claude/design-shots/`), never in a scratchpad.** A scratchpad lives for one session; the question "did this drift?" gets asked a month later, against a screenshot that has to still exist.
 - **Project memory gets one line — a pointer to this file — nothing more.** If the file's content is also copied into memory, the two copies diverge the first time either one is edited alone. Memory exists so that after a context compaction the orchestrator knows where to look, not so the content has a second home.
 
