@@ -31,7 +31,7 @@ and shows you the result. You change one element, it changes that element — no
 | `figma-plugin-api-rules` | nothing — it loads on its own | 393 real Plugin API failures and the way around each one. Loads before the agent writes anything into your file |
 | `figma-fix-variable-bindings` | "Variables on this page are detached, fix them" | Finds detached, orphaned and hardcoded values, shows you a report, and rebinds only after you approve it |
 
-Five `SKILL.md` files and 25 topic files behind them — components and variants, instances, layout
+Five `SKILL.md` files and 29 topic files behind them — components and variants, instances, layout
 and geometry, text and fonts, variables and modes, connectors, annotations, publishing hygiene,
 FigJam, the tool layer, building a screen from code. All plain Markdown. Nothing runs on your
 machine, nothing phones home.

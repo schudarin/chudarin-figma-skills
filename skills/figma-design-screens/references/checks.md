@@ -16,8 +16,11 @@ only a count.
 
 ## 2. Accuracy
 
-Technical execution, not beauty and not intent. Every criterion below is checkable by reading node
-properties or numbers, not by eyeballing the screenshot.
+Technical execution, not beauty and not intent. Two sources: the criteria below, and the copy,
+control, form and accessibility rules the brief carried — `references/ux-rules.md` routes to them
+by what the screen contains, and each rule states whether it is verified by **Read** (node
+properties and numbers) or by **Look** (the render). A Look rule reported without saying what was
+looked at didn't run.
 
 - **Tap zones ≥ 44pt.** A 28px-tall field reads as a caption rule rather than a field: it
   passes a visual glance and fails the moment someone tries to tap it.

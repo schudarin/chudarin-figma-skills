@@ -1,64 +1,45 @@
-# Copy and control rules
+# Copy and control rules — index
 
-Product-agnostic rules earned by having a specific screen rejected for each one. They are checkable
-by reading the file, so they belong to the Accuracy pass in `references/checks.md` — not to taste.
+Product-agnostic rules, each one earned by having a specific screen rejected for it. This file is
+the routing table; the rules themselves live in `ux/*.md`.
 
-## Copy
+**Two moments read this set, and they read it differently.**
 
-**One sentence takes no full stop; two or more take one after each.** "Enter a valid email address"
-— no stop. "Invalid code. Please try again." — a stop after each. A single label ending in a full
-stop reads as a fragment of prose rather than a piece of interface. Checkable by script: find text
-nodes with exactly one sentence and a trailing stop.
+- **Writing the brief** (`references/briefs.md`, block 5) — *before* anything is drawn. Take the
+  rows that match what this screen will contain and paste the rules themselves into the brief. A
+  rule the agent meets for the first time at check time has already cost a rebuild.
+- **The Accuracy pass** (`references/checks.md`, check 2) — *after* it is drawn. The same rules,
+  read as criteria.
 
-**A placeholder is not a value.** Bind it to the muted text token, never the primary one. A country
-placeholder left on the primary token read as an already-selected country, and the field looked
-filled when it was empty.
+## Routing: what to read when
 
-## Controls
+| The screen contains | Read |
+|---|---|
+| any interface text — labels, messages, button text, placeholders | `ux/copy.md` |
+| a field, a form, validation, one step of a multi-step flow | `ux/forms.md` |
+| a link, a button, a dropdown, a picker, a panel that opens | `ux/controls.md` |
+| anything at all | `ux/accessibility.md` |
 
-**Text links get no enlarged tap zone.** The 44pt rule is for buttons and fields. Applied to an
-inline link it inflates the wrapper, detaches the underline from the text, and breaks the vertical
-rhythm — set no `minHeight` on link wrappers. Note the trap: an accessibility checklist that says
-"tap zones ≥ 44" is itself what causes this defect, because the agent applies it to everything
-interactive. Exclude inline links explicitly when running that check.
+Load only the rows that match — except the last one, which has no exemption: every screen has
+text, targets and states.
 
-**Search over a long list is typed into the field itself** — combobox — not into a separate search
-input inside the dropdown. Two inputs for one task make the focus jump, and the typed text ends up
-somewhere other than the field being filled. Symptom to look for: the panel has an input while the
-trigger field is empty.
+## How each rule is written
 
-**Which way a panel opens is arithmetic, not preference.** Measure the space below the field to the
-edge of its container: if it is smaller than the panel, the panel opens upward, because that is what
-the browser does. A dropdown drawn downward through the bottom of a card is a drawing, not a state.
+Principle first, then how to verify it. Verification is one of two kinds, and the Accuracy pass
+treats them differently:
 
-**A container that holds one step of a flow gets a minimum height, not a fixed one.** The success
-step of a flow had a third of the content of the form before it, and the card collapsed — the layout
-jumped on the last step. A minimum equal to the form's height holds short steps steady while error
-states are still free to grow.
+- **Read** — verifiable by reading node properties or numbers. A finding names the node and the
+  number; no taste is involved.
+- **Look** — verifiable only on the render. Say what you looked at and what you saw; "looks fine"
+  is not a result.
 
-## Validation
+A rule with no verification line is not finished. Write one before adding it.
 
-**The submit button stays enabled, including on an empty form.** A disabled button states that
-something is wrong and refuses to say what; the user is left guessing which field is the problem. Let
-them press it and answer with the reason.
+## Growing this set
 
-**Then the answer has to be words.** On press, every unfilled field takes an error outline *and its
-own message* — "Enter your first name", not a bare red border. WCAG 3.3.1 requires the error to be
-identified in text. Group fields that form one logical value (a date entered as day / month / year)
-take one message between them, not three.
+A rule belongs here when it is true **outside** the product it came from. A rule that is true only
+for one product is a signature trait: it goes into that project's `design.md`
+(`references/state.md`, "Signature traits"), never here — putting it here would push one product's
+taste onto every other product this skill touches.
 
-Keep the disabled variant in the component for the states that genuinely have no cause to explain —
-loading, no permission — and never build that state out of opacity: a translucent black button dims
-its background and its label at the same time, so the label disappears and the state still doesn't
-read as inactive. Use dedicated tokens.
-
-## Data entry
-
-**Prefer typing to picking for values with a wide range.** A date of birth behind a modal calendar
-that opens on the current month costs 20+ years of paging, and the read-only field forbids the
-faster route. Three fields — day, a month select, year — remove the modal, and with it every defect
-the modal had.
-
-**A label that vanishes on input takes the context with it.** Turn the floating label on as soon as
-the field holds a value: reviewing a filled form otherwise shows "Vietnam", "Sarah", "14" with no
-indication of which field is which.
+When a topic file outgrows roughly 120 lines, split it and add a row to the table above.

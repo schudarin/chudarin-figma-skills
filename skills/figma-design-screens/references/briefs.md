@@ -11,7 +11,7 @@ Baseline failure: a brief mandated an identical tab bar across three requested l
 and got three variants that differed everywhere except the navigation. The defect was never in an
 agent's judgment; it was in what the brief handed the agent to judge
 with. A checklist that sits as prose beside the template gets read once and forgotten by the time
-the template is actually being filled in. So the nine checks below are not a list to consult —
+the template is actually being filled in. So the ten checks below are not a list to consult —
 they are blank slots built into the "ready to send" template itself. A slot still holding `[ ]`
 is visibly not done, the same way an unrun check in `checks.md`'s critic prompt defaults to
 FIX-FIRST rather than a silent pass.
@@ -19,7 +19,7 @@ FIX-FIRST rather than a silent pass.
 ## The designer brief — eight blocks
 
 Each block below is explained with a filled example. The actual copy-paste template, with the
-nine self-checks embedded at the block each one governs, follows in the next section.
+ten self-checks embedded at the block each one governs, follows in the next section.
 
 1. **Role and prior failure.** State who the agent is; if a previous attempt at this exact screen
    was rejected, say so plainly, including the reason if known — and separately, pull any
@@ -54,8 +54,11 @@ nine self-checks embedded at the block each one governs, follows in the next sec
    *Example: "Work only inside frame 'Settings/Draft'. Do not touch the Accounts page or any node
    also used by an existing screen — check Instances before editing a component."*
 
-5. **Design system as material that isn't free.** Colors from variables, type from text styles —
-   never typed in or eyeballed, even "just this once."
+5. **Design system as material that isn't free, and the rules in force.** Colors from variables,
+   type from text styles — never typed in or eyeballed, even "just this once." Then: open
+   `references/ux-rules.md`, take the rows matching what this screen will contain, and paste those
+   rules into the brief in full. Naming the file is not enough — a dispatched agent reads the brief,
+   not this skill's references.
    *Example: "Every fill is a variable from the 'color' collection. Every text layer uses an
    existing text style. If neither exists for what you need, say so instead of typing a value."*
 
@@ -119,7 +122,7 @@ SELF-CHECK 8 — is every prohibition above phrased as a goal ("stay inside the 
 not a bare block ("don't touch anything else")?
   [ ]
 
-## 5. Design system as material
+## 5. Design system as material, and the rules in force
 Colors: variables only, from [collection name]. Typography: existing text styles only.
 Reuse ladder, in this order, ahead of any create step:
 1. Does the screen need this element at all?
@@ -129,8 +132,16 @@ Reuse ladder, in this order, ahead of any create step:
 Only when all four are "no" — create.
 Never cut, no matter where the ladder lands: the screen's error, empty, and loading states;
 accessibility (tap zones, contrast); every task listed in block 6.
+
+Rules in force for this screen (pasted in full from references/ux-rules.md, not named):
+[the rules from every matching row — copy, forms, controls, accessibility]
 SELF-CHECK 6 — is the reuse ladder above present, in this order (need it at all → component →
 pattern to clone → variable/text style → create), with the never-cut list next to it?
+  [ ]
+SELF-CHECK 10 — are the rules in force pasted in full, from every row of references/ux-rules.md
+that matches what this screen contains — including the accessibility row, which always matches?
+A brief that only cites the file makes the agent discover the rules at check time, after the
+screen is built.
   [ ]
 
 ## 6. Screen content
@@ -219,7 +230,7 @@ same call — not scheduled as a separate check for later — and a check agains
 the next node starts. A batch of five writes verified once at the end means a failure on node two
 is discovered four nodes too late.
 
-These disciplines are prose today, and the same reasoning that put nine self-checks into the
+These disciplines are prose today, and the same reasoning that put ten self-checks into the
 designer template applies here without a discount: a checklist that sits beside the template gets
 read once and forgotten by the time the template is filled in. The mechanic template below carries
 the same kind of slots, for its own three real requirements, with the same blocking send status.

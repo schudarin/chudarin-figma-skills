@@ -58,7 +58,7 @@ never install anything to get one.
 
 **Nothing found — carry on without it.** Say so in one line, then work from what this skill already
 gives you: the design system, the existing screens, the references recorded in `design.md`, the copy
-and control rules in `references/ux-rules.md`, and the three checks in `references/checks.md`. A
+and control rules routed by `references/ux-rules.md`, and the three checks in `references/checks.md`. A
 missing visual skill costs an extra lens on composition, not the process.
 
 ## Working a screen
@@ -66,9 +66,9 @@ missing visual skill costs an extra lens on composition, not the process.
 | Step | What happens |
 |---|---|
 | 1 | Gather the style source: `design.md`, the design system, existing screens, or references |
-| 2 | Write the brief, check it against `references/briefs.md` |
+| 2 | Write the brief, check it against `references/briefs.md`; carry into it the rules in force for this screen — `references/ux-rules.md` routes to them by what the screen contains |
 | 3 | Agent builds: intent in words, then Figma, then self-critique and a revision pass |
-| 4 | Three checks from `references/checks.md`, before the user sees it — the Accuracy pass includes the copy and control rules in `references/ux-rules.md` |
+| 4 | Three checks from `references/checks.md`, before the user sees it — the Accuracy pass re-reads the same rules as criteria |
 | 5 | Show the user |
 | 6 | User hand-finishes it; the resulting screenshot becomes the saved one |
 
