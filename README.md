@@ -185,11 +185,19 @@ button", asks for the file link, and only then hands over. Any equivalent works.
 the agent to start on the wrong page.
 
 `figma-design-screens` also asks for one visual skill per task — a mobile-UI, web, motion or
-dataviz skill, whichever matches. Those live outside this pack, so it names the role and reads your
-shelf rather than hardcoding a name. The ones I keep installed are `mobile-app-ui-design`,
-`impeccable`, `design-motion-principles` and `dataviz`, plus a `design-critique` skill for the
-review pass — all third-party, so check each one still exists and still does what you want before
-leaning on it. Any equivalent works, and none of the five skills here breaks without them.
+charts skill, whichever matches the screen. Those live outside this pack, so it names the role and
+reads whatever is installed rather than hardcoding a name. Anthropic ships one for web work:
+
+```bash
+claude plugin install frontend-design@claude-plugins-official
+```
+
+For the other three roles the catalogues are [skills.sh](https://skills.sh) and
+[agentskills.io](https://agentskills.io). Pick by what a skill's description actually covers, and
+read its licence before installing someone else's work. I don't name specific ones here: they
+belong to their authors, who rename and retire them, and a stale recommendation is worse than
+none. Without any of it the five skills still run — you lose an extra lens on composition, not the
+process.
 
 Also worth having: a writing skill of your own for button labels and interface text. These skills
 place the text, they don't write it.
