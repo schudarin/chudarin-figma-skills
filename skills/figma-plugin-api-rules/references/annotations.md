@@ -17,7 +17,7 @@ node.annotations = [{ label: 'First fact.\n\nSecond fact.', categoryId: category
 ```
 
 ### annotations-category-existing-only
-**Principle:** A category — only from those already existing in the file (`figma.annotations.getAnnotationCategoriesAsync()`); don't create a new one via `addAnnotationCategoryAsync` without an explicit user request — categories are organisation-wide and adding a superfluous one litters Dev Mode for all files.
+**Principle:** A category — only from those already existing in the file (`figma.annotations.getAnnotationCategoriesAsync`); don't create a new one via `addAnnotationCategoryAsync` without an explicit user request — categories are organisation-wide and adding a superfluous one litters Dev Mode for all files.
 **Pattern:** find an existing one by `label` (`categories.find(c => c.label === '...')`); the choice is contextual to the fact's content (example: dynamic UI behaviour in response to a user action → `Interaction`; a structural layout decision without interactivity → `Design note`; data reflecting an entity's state → `Content`).
 
 ### annotations-content-rules
@@ -33,7 +33,7 @@ node.annotations = [{ label: 'First fact.\n\nSecond fact.', categoryId: category
 _(moved from `mcp-and-environment.md` — a basic Dev Mode annotation API fact, not MCP/environment)_
 **Principle:** Dev Mode Annotations are a channel separate from Comments (`figma.annotations.addAnnotationCategoryAsync({label, color})` + `node.annotations = [{label, categoryId}]`) with a valid colour enum `yellow|orange|red|pink|violet|blue|teal|green`, where purple is `'violet'`, and `'purple'` fails validation.
 **Symptom:** `Error: Property "categoryInput" failed validation: Invalid enum value... received 'purple'`.
-**Pattern:** before creating a category check `getAnnotationCategoriesAsync()` (see also `annotations-category-existing-only` above) — the preset categories Development/Interaction/Accessibility/Content (`isPreset:true`) exist in every file; a comment = a temporary TODO with resolve; an annotation = a permanent fact about the component's behaviour.
+**Pattern:** before creating a category check `getAnnotationCategoriesAsync` (see also `annotations-category-existing-only` above) — the preset categories Development/Interaction/Accessibility/Content (`isPreset:true`) exist in every file; a comment = a temporary TODO with resolve; an annotation = a permanent fact about the component's behaviour.
 ```js
 // ❌ WRONG — 'purple' isn't in the enum
 const category = await figma.annotations.addAnnotationCategoryAsync({ label: 'Design note', color: 'purple' });
@@ -117,7 +117,7 @@ header.annotations = [...(header.annotations || []), { label: '...', categoryId:
 Verified on a production admin dashboard — an attempt to mark a tag-values reference (a SECTION) as "illustrative" failed; fix — a second annotation entry on the section's already-annotated heading TEXT.
 
 ### clone-carries-dev-mode-annotations-invisibly
-**Principle:** `node.clone()` carries the node's Dev Mode annotations along with it, including annotations on nested nodes. In normal mode they're invisible — neither on the render nor in a structural check — so the clone "looks clean" while in Dev Mode it has foreign pins with facts about another screen, another resource and links to foreign tickets.
+**Principle:** `node.clone` carries the node's Dev Mode annotations along with it, including annotations on nested nodes. In normal mode they're invisible — neither on the render nor in a structural check — so the clone "looks clean" while in Dev Mode it has foreign pins with facts about another screen, another resource and links to foreign tickets.
 **Symptom:** on a new screen in Dev Mode there are annotations nobody added there: the text describes the donor's behaviour ("filter by entity status", links to `entity.api.ts`), although another section was assembled. A screenshot and a tree walk by types/names show no discrepancy.
 **Pattern:** after any block transfer by clone — `await figmaHygieneSweep(clonedRoot.id, 'post-clone')` from `publishing-hygiene.md` (a single sweep: removes annotations unconditionally and checks names/description/TEXT in one pass); set your own annotations anew if the fact is relevant to the new node.
 Verified on a production admin dashboard — while assembling a pilot screen of one of the sections, a clone of a filters modal from an accepted screen brought two annotations (`select`, `date range`) with facts about a domain entity and links to `SomeModal.tsx`; found only by the owner when viewing in Dev Mode.
@@ -133,7 +133,7 @@ node.annotations = [...node.annotations, existing];
 // ✅ build anew, only the needed fields
 node.annotations = [{ label: TEXT, categoryId: '145:1' }];
 ```
-Take only existing categories — `await figma.annotations.getAnnotationCategoriesAsync()`; in the verified files those are `145:0 Development`, `145:1 Interaction`, `145:2 Accessibility`, `145:3 Content`.
+Take only existing categories — `await figma.annotations.getAnnotationCategoriesAsync`; in the verified files those are `145:0 Development`, `145:1 Interaction`, `145:2 Accessibility`, `145:3 Content`.
 Verified on a mobile app file — setting annotations on a confirmation modal and on a settings row; the read returned both fields on each of the nodes; the write passed only when the object was built from scratch.
 
 ### node-annotations-property-not-recursive-false-negative-on-verify
@@ -148,7 +148,7 @@ const hasAnnotation = topNode.annotations && topNode.annotations.length > 0;
 const annotated = topNode.findAll(n => n.annotations && n.annotations.length > 0);
 const hasAnnotation = annotated.length > 0;
 ```
-Verified on a product mobile-app file — an independent review claimed the annotation wasn't built on any of 3 surfaces ("no annotations"); a repeat check on the same file found all three annotations in place, on the nested `dragdrop_block`/`entry_list`, not on the root sheet node, which apparently was what got checked directly.
+Verified on a product mobile-app file — an independent review claimed the annotation wasn't built on any of 3 surfaces ("no annotations"); a repeat check on the same file found all three annotations in place, on the nested the drop-zone component/the entry list, not on the root sheet node, which apparently was what got checked directly.
 
 ### annotation-writes-via-getnodebyidasync-need-no-page-switch
 **Principle:** `figma.getNodeByIdAsync(id)` + a direct property mutation (`node.annotations = [...]`, `node.characters`, any setter) works without `await figma.setCurrentPageAsync(...)`, regardless of which page the node physically lies on — `setCurrentPageAsync` is needed only for page-relative operations (`figma.currentPage.appendChild`, `page.findAll`, `page.children`), not for a targeted read/write by an already-known id. This is separate from the rule `cross-page-appendchild-moves-node` (that one is about moving a node BETWEEN pages via `targetPage.appendChild`); here it's about a targeted edit WITHOUT a move.

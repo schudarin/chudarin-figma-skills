@@ -9,11 +9,11 @@ exactly this way, written up as Principle / Symptom / Pattern — not a reading 
 ## What's inside
 
 - `SKILL.md` — the core: hard rules, the most frequently recurring universal API
-  principles, a routing table by topic, a quick-scan table of common mistakes, and the
-  protocol for adding to the pack.
+ principles, a routing table by topic, a quick-scan table of common mistakes, and the
+ protocol for adding to the pack.
 - `references/*.md` — pitfalls by topic (components and variants, instances, layout and
-  geometry, text and styles, variables, connectors, annotations, publishing hygiene,
-  FigJam, the tool layer / environment, building a screen from code).
+ geometry, text and styles, variables, connectors, annotations, publishing hygiene,
+ FigJam, the tool layer / environment, building a screen from code).
 
 ## How to use
 
@@ -21,9 +21,9 @@ The format is an agent skill (`SKILL.md` + `references/`). It works with Claude 
 and with Codex (via `agents/openai.yaml`).
 
 - **Claude Code:** put the folder in `~/.claude/skills/figma-plugin-api-rules/` (available in
-  every project) or in `<project>/.claude/skills/figma-plugin-api-rules/` (that project only).
+ every project) or in `<project>/.claude/skills/figma-plugin-api-rules/` (that project only).
 - **Codex:** put it in `~/.agents/skills/figma-plugin-api-rules/` or `<repo>/.agents/skills/`.
-  Invoke explicitly with `$figma-plugin-api-rules`; implicit invocation is on.
+ Invoke explicitly with `$figma-plugin-api-rules`; implicit invocation is on.
 
 Load `SKILL.md` before the first programmatic Figma call in a session — in addition to
 your tool's own instructions for calling the Figma API (`figma-use` in Claude Code, or the

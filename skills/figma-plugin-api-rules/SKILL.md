@@ -15,14 +15,14 @@ Accumulated, field-tested knowledge of the Figma Plugin API as driven through an
 2. **Inspect before you mutate.** Read `componentPropertyDefinitions`, `children`, and bounding boxes *before* writing.
 3. **Verify every ID that came from a prompt or a past session** with one read-only call before the first write (see `verify-variable-ids-before-write` below). Passed-in IDs are routinely off-by-N or point at a sibling.
 4. **Load the topic file before the first write that uses its API — match on the code you are about to send, not on a guess about the "topic".** If the next `use_figma` script contains any of these identifiers, read the file first:
-   - `swapComponent` · `setProperties` · `detachInstance` · `createInstance` · `getMainComponentAsync` · `componentProperties` → `references/instances.md`
-   - `combineAsVariants` · `addComponentProperty` · `deleteComponentProperty` · `componentPropertyDefinitions` · `componentPropertyReferences` → `references/components-and-variants.md`
-   - `setBoundVariable` · `setBoundVariableForPaint` · `addMode` · `setValueForMode` · `resolveForConsumer` → `references/variables-and-tokens.md`
-   - `characters =` · `loadFontAsync` · `textStyleId` · `textAutoResize` · `textTruncation` → `references/text-and-styles.md`
-   - `layoutMode` · `layoutSizing*` · `primaryAxisSizingMode` · `resize(` · `insertChild` · `clone()` → `references/layout-and-geometry.md`
-   - `connectorStart` · `connectorEnd` → `references/connectors.md` · `annotations` → `references/annotations.md`
-   - `get_metadata` on a page · `findAll` over a page · `exportAsync` · `get_screenshot` for verification → `references/mcp-and-environment.md`
-   One read per file per session is enough. Skipping it is how a session re-discovers a documented rule the hard way — a 2-hour run that never opened `instances.md` hit `swapComponent` returning `void`, a stale child id after `setProperties`, and a hidden instance child "unreachable" — all three are in that file.
+ - `swapComponent` · `setProperties` · `detachInstance` · `createInstance` · `getMainComponentAsync` · `componentProperties` → `references/instances.md`
+ - `combineAsVariants` · `addComponentProperty` · `deleteComponentProperty` · `componentPropertyDefinitions` · `componentPropertyReferences` → `references/components-and-variants.md`
+ - `setBoundVariable` · `setBoundVariableForPaint` · `addMode` · `setValueForMode` · `resolveForConsumer` → `references/variables-and-tokens.md`
+ - `characters =` · `loadFontAsync` · `textStyleId` · `textAutoResize` · `textTruncation` → `references/text-and-styles.md`
+ - `layoutMode` · `layoutSizing*` · `primaryAxisSizingMode` · `resize(` · `insertChild` · `clone` → `references/layout-and-geometry.md`
+ - `connectorStart` · `connectorEnd` → `references/connectors.md` · `annotations` → `references/annotations.md`
+ - `get_metadata` on a page · `findAll` over a page · `exportAsync` · `get_screenshot` for verification → `references/mcp-and-environment.md`
+ One read per file per session is enough. Skipping it is how a session re-discovers a documented rule the hard way — a 2-hour run that never opened `instances.md` hit `swapComponent` returning `void`, a stale child id after `setProperties`, and a hidden instance child "unreachable" — all three are in that file.
 5. **Prologue for any write batch:** `await figma.setCurrentPageAsync(page)` before the first mutation, and load every font the batch touches. Both are easy to forget and both fail opaquely mid-batch — a wrong-page mutation or an unloaded-font write doesn't say so, it just throws.
 6. **Atomic operations — never leave a node half-applied.** For multi-property rebinds, apply so that if part fails the rest is not left changed. Verify the whole set landed before moving on.
 7. **Read the result back inside the same call.** Return `{createdNodeIds, mutatedNodeIds, before, after}`, resolving variable ids to **names** in `before`/`after`. A raw variable id tells you nothing when checking; a name lets you spot a wrong binding on sight. Many failures are silent: library-swatch bindings, `cornerRadius` bindings, layout sizing — read back, don't assume.
@@ -34,14 +34,14 @@ Accumulated, field-tested knowledge of the Figma Plugin API as driven through an
 ## Universal principles
 
 ### node-query-no-spaces-in-names
-**Principle:** `node.query()` does not match node names that contain spaces, and its selector language has no escape syntax — `query('FRAME[name=Title\\ Block]')` throws `Invalid selector: unexpected character '\'`. Find such nodes with `findOne(n => n.name === '…')` and exact string comparison.
+**Principle:** `node.query` does not match node names that contain spaces, and its selector language has no escape syntax — `query('FRAME[name=Title\\ Block]')` throws `Invalid selector: unexpected character '\'`. Find such nodes with `findOne(n => n.name === '…')` and exact string comparison.
 **Symptom:** a query by a name with a space returns empty although the node exists.
 
 ### page-ids-unstable-refind-by-name
 **Principle:** Page IDs are unstable even within one call — never cache a page id; re-find the page by name: `figma.root.children.find(p => p.name === '…')`.
 
 ### createframe-default-white-fill
-**Principle:** `createFrame()` and `createAutoLayout()` create a frame with a white `#ffffff` fill by default — set `frame.fills = []` on structural containers right after creation.
+**Principle:** `createFrame` and `createAutoLayout` create a frame with a white `#ffffff` fill by default — set `frame.fills = []` on structural containers right after creation.
 **Symptom:** invisible white slabs behind every structural container.
 
 ### appendchild-returns-void
@@ -58,7 +58,7 @@ bar.layoutSizingHorizontal = 'FILL';
 ```
 
 ### layout-sizing-only-after-appendchild
-**Principle:** `layoutSizingHorizontal` / `layoutSizingVertical` can only be set **after** the node is inside its auto-layout parent — set earlier, they are silently ignored because the property resolves against the parent's layout mode. Same order for `resize()`: resize first, then sizing modes; wrapping text is `textAutoResize = 'HEIGHT'` + `layoutSizingHorizontal = 'FILL'`.
+**Principle:** `layoutSizingHorizontal` / `layoutSizingVertical` can only be set **after** the node is inside its auto-layout parent — set earlier, they are silently ignored because the property resolves against the parent's layout mode. Same order for `resize`: resize first, then sizing modes; wrapping text is `textAutoResize = 'HEIGHT'` + `layoutSizingHorizontal = 'FILL'`.
 ```js
 parentFrame.appendChild(node);
 node.layoutSizingHorizontal = 'FILL';
@@ -66,7 +66,7 @@ node.layoutSizingVertical = 'HUG';
 ```
 
 ### createautolayout-default-size-hug-collapse
-**Principle:** `figma.createAutoLayout()` creates a 100×100 px frame, and `layoutSizingVertical = 'HUG'` does not recompute height after `appendChild` — force the collapse explicitly: `counterAxisSizingMode = 'FIXED'` → `resize(width, 0)` → `counterAxisSizingMode = 'AUTO'` → `layoutSizingVertical = 'HUG'`.
+**Principle:** `figma.createAutoLayout` creates a 100×100 px frame, and `layoutSizingVertical = 'HUG'` does not recompute height after `appendChild` — force the collapse explicitly: `counterAxisSizingMode = 'FIXED'` → `resize(width, 0)` → `counterAxisSizingMode = 'AUTO'` → `layoutSizingVertical = 'HUG'`.
 **Symptom:** a HUG frame stays 100 px even with empty or hidden content.
 **Caution:** on a freshly created auto-layout frame with just-added TEXT children, this same resize trick in the same script can silently break the TEXT nodes' own sizing (`textAutoResize` / `layoutSizingVertical` drop to NONE/FIXED) — see `resize-on-fresh-autolayout-frame-before-hug-settles-corrupts-text-sizing` in `references/layout-and-geometry.md`; either split assembly and collapse into two calls, or don't resize a fresh frame at all.
 ```js
@@ -106,14 +106,14 @@ actionRow.layoutSizingVertical = 'HUG';
 **Pattern:** `const p = figma.root.children.find(pg => pg.name === '…'); await figma.setCurrentPageAsync(p); p.appendChild(node);`
 
 ### clone-reparents-to-currentpage-if-source-not-on-currentpage
-**Principle:** `node.clone()` inserts the copy into `figma.currentPage` (not next to the original in its real parent) if the original is not physically on the current page at call time — and `figma.currentPage` resets to the first page at the start of EVERY call (see above). Same symptom, triggered by `.clone()` instead of a manual `appendChild`.
+**Principle:** `node.clone` inserts the copy into `figma.currentPage` (not next to the original in its real parent) if the original is not physically on the current page at call time — and `figma.currentPage` resets to the first page at the start of EVERY call (see above). Same symptom, triggered by `.clone` instead of a manual `appendChild`.
 **Symptom:** the clone renders fine by its own nodeId (screenshot / `get_design_context` work) but is entirely absent from the target SECTION/FRAME when walking `parent.children` — visible only by explicitly checking `clone.parent` or walking up to PAGE; a screenshot of the clone itself won't catch it.
-**Pattern:** right after `const clone = source.clone();` do `targetParent.appendChild(clone); clone.x = savedX; clone.y = savedY;` (record x/y before the append). `appendChild` doesn't recompute coordinates for the new parent, so re-setting the same local x/y after the move puts the clone where it was meant to go. Alternative: `await figma.setCurrentPageAsync(pageOfSource)` before `.clone()`, but the appendChild pattern is more robust (doesn't require knowing the current page in advance).
+**Pattern:** right after `const clone = source.clone;` do `targetParent.appendChild(clone); clone.x = savedX; clone.y = savedY;` (record x/y before the append). `appendChild` doesn't recompute coordinates for the new parent, so re-setting the same local x/y after the move puts the clone where it was meant to go. Alternative: `await figma.setCurrentPageAsync(pageOfSource)` before `.clone`, but the appendChild pattern is more robust (doesn't require knowing the current page in advance).
 
 ### page-children-bbox-collision-check
 **Principle:** Position new top-level nodes only after an arithmetic check against the bounding boxes of ALL `page.children` — "not (0,0)" and "looks empty from memory" don't guarantee free space, and a screenshot of a temporary group renders new nodes in isolation and doesn't show collisions with content underneath.
 **Symptom:** new content landed on top of existing canonical frames (higher z-order, added later) and hid them entirely; the agent's own screenshot verification didn't catch it.
-**Pattern:** build `boxes = page.children.map(n => ({x, y, right, bottom}))` and check the candidate against each. For a combined screenshot with a CONNECTOR, use a temporary SECTION, not a GROUP: ungrouping a GROUP deletes a connector whose endpoint is on it without a trace; a SECTION doesn't auto-delete — remove it explicitly with `section.remove()`.
+**Pattern:** build `boxes = page.children.map(n => ({x, y, right, bottom}))` and check the candidate against each. For a combined screenshot with a CONNECTOR, use a temporary SECTION, not a GROUP: ungrouping a GROUP deletes a connector whose endpoint is on it without a trace; a SECTION doesn't auto-delete — remove it explicitly with `section.remove`.
 ```js
 const boxes = page.children.map(n => ({ x: n.x, y: n.y, right: n.x + n.width, bottom: n.y + n.height }));
 // check the candidate against every box before positioning — never rely on memory that "it's empty here"
@@ -135,8 +135,8 @@ for (const id of ids) {
 Confirmed on a real product file: several visually "parallel" case sections turned out to be nested in each other (one lay entirely inside its neighbour instead of beside it on the page); the raw `.x`/`.y` comparison first missed a real collision between nested sections, then "found" non-existent ones between unrelated sections — recomputing every bbox through `absoluteTransform` with one method gave the true picture.
 
 ### findone-object-identity-indexof
-**Principle:** `findOne()` / `findAll()` return fresh node wrappers on every traversal — `indexOf()` and any `===` comparison of node objects against `parent.children` silently yield `-1` / `false` even for a real direct child; compare by `.id` only: `parent.children.findIndex(c => c.id === node.id)`.
-**Symptom:** `insertChild(-1, ...)` throws `Cannot insert node at a negative index` — masking that the original `indexOf` returned -1.
+**Principle:** `findOne` / `findAll` return fresh node wrappers on every traversal — `indexOf` and any `===` comparison of node objects against `parent.children` silently yield `-1` / `false` even for a real direct child; compare by `.id` only: `parent.children.findIndex(c => c.id === node.id)`.
+**Symptom:** `insertChild(-1,...)` throws `Cannot insert node at a negative index` — masking that the original `indexOf` returned -1.
 
 ### delete-children-in-descending-index-order
 **Principle:** Removing children by numeric index in ascending order shifts `children` after each removal, so an index computed up front no longer points at the node you meant. A later `findOne` may come back `null` after a clone-and-prune pass for exactly this reason. Delete in **descending** index order, and capture node references *before* any mutation rather than re-deriving them from indices afterwards.
@@ -147,20 +147,20 @@ for (const i of toRemove.sort((a, b) => b - a)) node.children[i].remove();
 ```
 
 ### cross-page-appendchild-moves-node
-**Principle:** `targetPage.appendChild(node)` moves a node BETWEEN pages of the same file directly — no export/import or detach needed, provided both the destination page and the node are addressed through `figma.getNodeByIdAsync()`, not `figma.currentPage`.
+**Principle:** `targetPage.appendChild(node)` moves a node BETWEEN pages of the same file directly — no export/import or detach needed, provided both the destination page and the node are addressed through `figma.getNodeByIdAsync`, not `figma.currentPage`.
 **Symptom:** the temptation to solve "take a ready component from another page" by cloning in the source context + manually carrying properties over — redundant when a direct `appendChild` works.
 **Pattern:** `const node = await figma.getNodeByIdAsync(idFromOtherPage); const targetPage = await figma.getNodeByIdAsync(targetPageId); targetPage.appendChild(node);` — afterwards `node.parent` points at the new page and `absoluteTransform` is recomputed automatically.
 
 ### variant-switch-retains-matching-property-overrides
-**Principle:** Switching a COMPONENT_SET instance's variant via `setProperties()` can carry a boolean/text componentProperty override from the PREVIOUS active child onto the NEW child when both have a property with the same property key (GUID) — even if the new variant's default in the main component is different.
+**Principle:** Switching a COMPONENT_SET instance's variant via `setProperties` can carry a boolean/text componentProperty override from the PREVIOUS active child onto the NEW child when both have a property with the same property key (GUID) — even if the new variant's default in the main component is different.
 **Symptom:** after a variant switch (e.g. `Actions=Double` → `Single`) the new single child unexpectedly renders with a foreign property value (e.g. `Show icon-right=true` inherited from the old neighbour button), although the main component defaults it to `false`.
 **Pattern:** after any variant switch — explicitly re-read and, where needed, re-set ALL relevant componentProperties of the new child; don't rely on the main component's defaults; compare with a known-good reference (the same component elsewhere in the file) if one exists.
 **Wider:** this is one direction of a more general problem — after ANY variant/component switch (`setProperties` on a variant axis, `swapComponent`, Expanded/type toggles) every property of the subtree must be treated as suspect: visibility, paint variable bindings, icon glyphs and text may either inherit from the old variant (this direction) or silently reset to the new main's default (the opposite direction) — independently of each other. Confirmed repeatedly across components and files. **Rule:** after any switch, check the WHOLE subtree with a screenshot, not just the key-matching overrides.
 
 ### fresh-instance-never-inherits-donor-overrides
-**Principle:** A freshly created INSTANCE (via `master.createInstance()`, `donorInstance.getMainComponentAsync().createInstance()` or equivalent) never inherits override values from a neighbouring / reference / donor instance of the same component — only the true main-component defaults, even when a "known good" instance with the wanted values sits right next to it.
+**Principle:** A freshly created INSTANCE (via `master.createInstance`, `donorInstance.getMainComponentAsync.createInstance` or equivalent) never inherits override values from a neighbouring / reference / donor instance of the same component — only the true main-component defaults, even when a "known good" instance with the wanted values sits right next to it.
 **Symptom:** the new instance doesn't match the neighbouring "reference" instance visually or in properties — text overrides, boolean icon visibility, swapped icons all fall back to the main's defaults.
-**Pattern:** after `createInstance()` copy the needed componentProperties/overrides from the donor instance explicitly — don't expect a "similar neighbour" to pass on its state. Confirmed independently in different files and component types.
+**Pattern:** after `createInstance` copy the needed componentProperties/overrides from the donor instance explicitly — don't expect a "similar neighbour" to pass on its state. Confirmed independently in different files and component types.
 
 ### icon-library-swap-requires-explicit-recolor
 **Principle:** Instances/components imported or swapped from an icon library arrive with the LIBRARY's own default stroke/fill (often black, or a semantically wrong `*-inverse` token) — they are never recoloured automatically for the consuming context. SVGs imported with `createNodeFromSvg` behave the same way: a stray white frame fill and black strokes (codebase `currentColor` imports as black).
@@ -168,7 +168,7 @@ for (const i of toRemove.sort((a, b) => b - a)) node.children[i].remove();
 **Pattern:** after every icon import/swap — an explicit pass rebinding stroke/fill to the right variable/token; for SVG imports also set the icon **frame** `fills = []`. Don't count recolouring as part of the swap itself. Confirmed independently for several icon libraries.
 
 ### swapcomponent-keeps-slot-size
-**Principle:** `swapComponent` keeps the slot's size, not the new component's — swapping a 24×24 icon into a 32×32 slot yields a 32×32 instance, and `resize()` on a node nested inside an instance is silently ignored (the size belongs to the parent instance). Either accept the slot size or swap at a slot that already matches.
+**Principle:** `swapComponent` keeps the slot's size, not the new component's — swapping a 24×24 icon into a 32×32 slot yields a 32×32 instance, and `resize` on a node nested inside an instance is silently ignored (the size belongs to the parent instance). Either accept the slot size or swap at a slot that already matches.
 **Pattern:** check the result with `Math.round(node.width)` after the swap, not the component's declared size. When a swap target is ambiguous (several plausible components or variants), confirm with the user before applying — don't guess the match.
 
 ### component-names-unreliable-match-by-structure-not-string
@@ -193,9 +193,9 @@ Confirmed on a throwaway prototype (2×2-mode setup): pinning Semantic=Brand-A +
 Also confirmed on a real migration: the base palette was moved to several modes for real, and repointing semantic roles at it reproduced exactly the predicted case — right after the repoint (before adding the base-collection pin on demo frames) every frame except the collection's default mode showed ONE and the same (foreign) colour instead of its own. After adding the second pin (`frame.setExplicitVariableModeForCollection(...)`) on each demo frame the render returned to the right values — confirmed by `resolveForConsumer` over all roles × modes (byte-identical to the source values) and by screenshots. **Practical consequence for any future audit/export that walks the upper collection's roles once they've migrated onto a multi-mode lower one:** don't read `valuesByMode` directly and don't map the upper collection's mode name onto the same-named lower mode by assumption — resolve through `variable.resolveForConsumer(node)` where `node` is a correctly pinned demo node carrying both pins.
 
 ### addmode-copies-values-from-last-existing-mode-not-default-mode
-**Principle:** `variableCollection.addMode(name)` initialises the new mode's values as a copy of the **last mode in the current `.modes` list** (whatever was physically last BEFORE the `addMode` call), not of `collection.defaultModeId` — even when the default mode is not the last one. Calling `addMode()` twice in one script (say, add a light mode, then a dark one) copies the FIRST new mode from the collection's previous last mode, not from the default — the intuitive "new mode = copy of default" does not hold.
+**Principle:** `variableCollection.addMode(name)` initialises the new mode's values as a copy of the **last mode in the current `.modes` list** (whatever was physically last BEFORE the `addMode` call), not of `collection.defaultModeId` — even when the default mode is not the last one. Calling `addMode` twice in one script (say, add a light mode, then a dark one) copies the FIRST new mode from the collection's previous last mode, not from the default — the intuitive "new mode = copy of default" does not hold.
 **Symptom:** if the "light" new mode is deliberately NOT rewritten by hand (trusting that "it inherits the right values from the default light mode anyway"), the variables silently keep the values of the LAST existing mode (often the "dark" one), and `resolveForConsumer` on the affected nodes returns an unexpected (dark/foreign) colour. A screenshot right after the mutation may also look "broken" (or, conversely, deceptively fine because of caching — see `use-figma-stale-reads-after-mutation`; that is an INDEPENDENT cause, easy to confuse during diagnosis) — separate the two: first `resolveForConsumer` (structural truth, not cached), then the screenshot/render.
-**Pattern:** after `addMode()` NEVER rely on auto-copy as the source of correct values for anything other than literally "the same as the last mode before the call" — for EACH new mode, including the one that "seems obvious" (e.g. matching the default), run the same explicit "copy the needed values from the right donor mode" step (`v.setValueForMode(newModeId, v.valuesByMode[correctSourceModeId])` per variable of the family/collection). Don't do it only for the "non-obvious" one of two new modes — both need the explicit step, symmetrically.
+**Pattern:** after `addMode` NEVER rely on auto-copy as the source of correct values for anything other than literally "the same as the last mode before the call" — for EACH new mode, including the one that "seems obvious" (e.g. matching the default), run the same explicit "copy the needed values from the right donor mode" step (`v.setValueForMode(newModeId, v.valuesByMode[correctSourceModeId])` per variable of the family/collection). Don't do it only for the "non-obvious" one of two new modes — both need the explicit step, symmetrically.
 ```js
 // AFTER addMode — don't assume where the values came from, check explicitly:
 const newMode = collection.addMode('New-mode');
@@ -242,7 +242,7 @@ If you accumulate facts about one specific Figma file (Set IDs / Page IDs of par
 | Expecting properties to survive a dissolved variant set | They belong to the SET; re-create them on the standalone component |
 | Reading a set's `description`/`x`/`y` after moving its last variant out | The emptied set auto-deletes — read what you need before mutating |
 | Trusting an instance's `children` as an inventory | Hidden descendants are missing — read the main component — `instances.md` |
-| Escaping spaces in a `query()` selector | No escape syntax — write the space as-is or use `findAll` with a predicate |
+| Escaping spaces in a `query` selector | No escape syntax — write the space as-is or use `findAll` with a predicate |
 | One property collector over a mixed-type node list | Guard each property with `'prop' in n` |
 | Deleting children by ascending numeric index | Delete in descending order, capture refs before mutating |
 | Assuming a `vectorPaths` node sits at `(0, 0)` | Its box is normalised to the path's bbox — `layout-and-geometry.md` |

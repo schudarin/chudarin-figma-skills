@@ -1,6 +1,6 @@
 ---
 name: figma-fix-variable-bindings
-description: Fix detached or missing variable bindings in Figma — typography (fontFamily, fontStyle, fontSize, fontWeight), padding/spacing (paddingTop/Right/Bottom/Left, itemSpacing, counterAxisSpacing), corner radii (cornerRadius, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius), and colors (solid fills and strokes). Trigger when the user mentions detached styles, deleted variables, broken bindings, "Variable was deleted" warnings, wrong fonts, manual/hardcoded padding, unbound spacing, hardcoded corner radius / rounding, detached/hardcoded colors, unbound fills or strokes, broken color variables, or asks to audit/clean up/fix variables across a file or page. Covers the full scan → resolve → rebind workflow. Trigger even if only one of typography/padding/roundings/colors is mentioned.
+description: Fix detached or missing variable bindings in Figma — typography (fontFamily, fontStyle, fontSize, fontWeight), padding/spacing (paddingTop/Right/Bottom/Left, itemSpacing, counterAxisSpacing), corner radii (cornerRadius, topLeftRadius, topRightRadius, bottomLeftRadius, bottomRightRadius), and colors (solid fills and strokes). Trigger when the user mentions detached styles, deleted variables, broken bindings, "Variable was deleted" warnings, wrong fonts, manual/hardcoded padding, unbound spacing, hardcoded corner radius / rounding, detached/hardcoded colors, unbound fills or strokes, broken color variables, or asks to audit/clean up/fix variables across a file or page. Covers the full scan → report → confirm → rebind workflow; read-only until the user approves the report. Trigger even if only one of typography/padding/roundings/colors is mentioned.
 ---
 
 # Figma Fix Variable Bindings
@@ -20,6 +20,8 @@ Figma nodes lose variable bindings when collections get orphaned, libraries upda
 A node can have **dual bindings** (remote library + local) on the same property. The local one wins at render time. `setBoundVariable(field, null)` only removes the remote binding — the local persists. `variable.remove()` silently no-ops if referenced. These are platform limitations.
 
 ## Workflow (target: 4–5 tool calls total)
+
+**This skill writes to the user's file. Nothing is bound, changed or deleted before the user has seen the scan and said "apply".** Phase 1 and 2 are read-only; Phase 3 runs only after an explicit go-ahead on the report; Phase 4 (deleting variables and collections) needs its own separate confirmation — never bundle it into the "apply" answer.
 
 ### Phase 1: Unified Scan (1 call)
 
@@ -158,7 +160,18 @@ while (queue.length) {
 }
 ```
 
-### Phase 3: Build Replacement Maps & Apply Fixes (1–2 calls)
+### Phase 2½: Report and stop — the gate
+
+Before any write, show the user what Phase 1 + 2 found and what would change:
+
+- per family (typography / padding / radius / colour): how many nodes, how many will bind to which token, how many have no exact match and stay untouched
+- the list of unmatched values and hexes, so the designer can decide
+- how many instance nodes are skipped (their master is the fix surface)
+- whether any orphaned local variables/collections would be deletion candidates in Phase 4
+
+Then ask, in one line, whether to apply — and wait. If the scope is a whole page or file, offer to apply to one frame first as a proof, then the rest. No "apply" → the run ends here with the report; that is a complete, useful outcome, not a failure.
+
+### Phase 3: Build Replacement Maps & Apply Fixes (1–2 calls) — only after the user said "apply"
 
 For each property family build `value → libraryVariable` maps from `libTokens`:
 
@@ -221,9 +234,9 @@ for (const surface of ["fills","strokes"]) {
 }
 ```
 
-### Phase 4: Cleanup (tail of previous call)
+### Phase 4: Cleanup — separate, explicit confirmation required
 
-Try deleting orphaned local variables and collections. Silent failures expected — `variable.remove()` no-ops if anything still references it.
+Deleting orphaned local variables and collections is destructive and not reversible from the API. Do it only if the user confirmed *this step* by name after seeing the Phase 3 report ("also delete the N orphaned local variables?"). Never fold it into the earlier "apply". Silent failures expected — `variable.remove()` no-ops if anything still references it.
 
 ## Pitfalls
 
