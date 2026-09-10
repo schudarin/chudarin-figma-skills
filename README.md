@@ -36,7 +36,7 @@ Five `SKILL.md` files and 39 topic files behind them. Eleven of those are the Pl
 components and variants, instances, layout and geometry, text and fonts, variables and modes,
 connectors, annotations, publishing hygiene, FigJam, the tool layer, building a screen from code. The
 other twenty-eight carry the audit checklists, the per-screen briefs, the checks that run afterwards,
-and 156 UX rules routed by what the screen contains. All plain Markdown. Nothing runs on your
+and 157 UX rules routed by what the screen contains. All plain Markdown. Nothing runs on your
 machine, nothing phones home.
 
 ## Why it's not just prompting
