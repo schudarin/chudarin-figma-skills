@@ -14,12 +14,22 @@ Accumulated, field-tested knowledge of the Figma Plugin API as driven through an
 1. **Your tool's Figma API instructions load before the first call — always.** This pack complements them.
 2. **Inspect before you mutate.** Read `componentPropertyDefinitions`, `children`, and bounding boxes *before* writing.
 3. **Verify every ID that came from a prompt or a past session** with one read-only call before the first write (see `verify-variable-ids-before-write` below). Passed-in IDs are routinely off-by-N or point at a sibling.
-4. **Load the topic files the task touches** (routing table below) *before* the first write in that topic.
+4. **Load the topic file before the first write that uses its API — match on the code you are about to send, not on a guess about the "topic".** If the next `use_figma` script contains any of these identifiers, read the file first:
+   - `swapComponent` · `setProperties` · `detachInstance` · `createInstance` · `getMainComponentAsync` · `componentProperties` → `references/instances.md`
+   - `combineAsVariants` · `addComponentProperty` · `deleteComponentProperty` · `componentPropertyDefinitions` · `componentPropertyReferences` → `references/components-and-variants.md`
+   - `setBoundVariable` · `setBoundVariableForPaint` · `addMode` · `setValueForMode` · `resolveForConsumer` → `references/variables-and-tokens.md`
+   - `characters =` · `loadFontAsync` · `textStyleId` · `textAutoResize` · `textTruncation` → `references/text-and-styles.md`
+   - `layoutMode` · `layoutSizing*` · `primaryAxisSizingMode` · `resize(` · `insertChild` · `clone()` → `references/layout-and-geometry.md`
+   - `connectorStart` · `connectorEnd` → `references/connectors.md` · `annotations` → `references/annotations.md`
+   - `get_metadata` on a page · `findAll` over a page · `exportAsync` · `get_screenshot` for verification → `references/mcp-and-environment.md`
+   One read per file per session is enough. Skipping it is how a session re-discovers a documented gotcha the hard way — a 2-hour run that never opened `instances.md` hit `swapComponent` returning `void`, a stale child id after `setProperties`, and a hidden instance child "unreachable" — all three are in that file.
 5. **Prologue for any write batch:** `await figma.setCurrentPageAsync(page)` before the first mutation, and load every font the batch touches. Both are easy to forget and both fail opaquely mid-batch — a wrong-page mutation or an unloaded-font write doesn't say so, it just throws.
 6. **Atomic operations — never leave a node half-applied.** For multi-property rebinds, apply so that if part fails the rest is not left changed. Verify the whole set landed before moving on.
 7. **Read the result back inside the same call.** Return `{createdNodeIds, mutatedNodeIds, before, after}`, resolving variable ids to **names** in `before`/`after`. A raw variable id tells you nothing when checking; a name lets you spot a wrong binding on sight. Many failures are silent: library-swatch bindings, `cornerRadius` bindings, layout sizing — read back, don't assume.
-8. **Any text that leaves for Figma is a publication.** Before writing a component `description`, a Dev Mode annotation, a node/page/section name or a TEXT layer, check `references/publishing-hygiene.md`: no dates, no people's names, no internal code names, no paths to internal docs, no phase/version/task numbers, no `SANDBOX`/`WIP`/`TODO`. After transferring anything by clone, sweep the subtree.
-9. **New insight → into the pack immediately**, per the protocol at the end. Don't defer it.
+8. **A thrown error rolls back the whole `use_figma` call.** Mutations that ran before the failing line are undone with it — even the ones that "visibly applied" in the same script. After any error: re-read the state before re-applying; put a risky operation (an untested API, a nested-instance write) in its own call or a `try/catch` so it can't erase the work next to it.
+9. **The sandbox hides invisible instance children by default.** `figma.skipInvisibleInstanceChildren` is `true` here (the documented Plugin API default is `false`): hidden descendants of an INSTANCE are missing from `children`/`findAll`, and a hidden INSTANCE reads `children: []`. To reach a hidden node (e.g. a `Reset` button hidden in the master), set `figma.skipInvisibleInstanceChildren = false` as the first line of the script — don't conclude the node is unreachable and redesign the master around it.
+10. **Any text that leaves for Figma is a publication.** Before writing a component `description`, a Dev Mode annotation, a node/page/section name or a TEXT layer, check `references/publishing-hygiene.md`: no dates, no people's names, no internal code names, no paths to internal docs, no phase/version/task numbers, no `SANDBOX`/`WIP`/`TODO`. After transferring anything by clone, sweep the subtree.
+11. **New insight → into the pack immediately**, per the protocol at the end. Don't defer it.
 
 ## Universal principles
 
