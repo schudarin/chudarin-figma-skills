@@ -5,7 +5,7 @@ a variable that never bound, a component set that deleted itself when its last v
 screen assembled from hardcoded values that looks right until someone switches the theme.
 
 This is what fixed that on real product files. Five skills: the process for each stage of design
-work, plus 393 recorded Plugin API failures with the way around each one. Every rule here is a case
+work, plus 378 recorded Plugin API failures with the way around each one. Every rule here is a case
 that broke exactly this way, not a reading of the docs.
 
 [Русская версия](README.ru.md)
@@ -16,8 +16,9 @@ Designers. You install it once, then work in a chat: paste a Figma link, say wha
 sentence. No code, no code editor, no plugin to build.
 
 What that looks like in practice — you paste a link to a frame and write "design a settings screen
-for this app". The first time in a new project the agent asks two questions: is there a design
-system, are there existing screens. It writes the answers down and never asks again. Then it works
+for this app". In a project it hasn't seen, the agent first looks for the answers it needs — a design
+system document, existing screens, the variables already in the file — and asks you only what the
+search didn't turn up, at most two questions. It writes that down and never asks again. Then it works
 from your components and variables, reads back every binding it set instead of assuming it applied,
 and shows you the result. You change one element, it changes that element — not the screen around it.
 
@@ -28,13 +29,14 @@ and shows you the result. You change one element, it changes that element — no
 | `figma-plan-user-flows` | "What screens do we need for checkout?" | You get every screen and state, entry and exit points, and a page structure for the Figma file — before anything is drawn |
 | `figma-audit-design-system` | "Go through this file and tell me what the design system holds" | The agent reads the file and reports components, tokens, patterns and design debt, and writes documentation pages if you ask. Read-only otherwise |
 | `figma-design-screens` | "Design a settings screen" · "Change the header on this frame" | The design process itself: where the style comes from, a brief per screen, checks afterwards, edits to approved work one element at a time |
-| `figma-plugin-api-rules` | nothing — it loads on its own | 393 real Plugin API failures and the way around each one. Loads before the agent writes anything into your file |
+| `figma-plugin-api-rules` | nothing — it loads on its own | 378 real Plugin API failures and the way around each one. Loads before the agent writes anything into your file |
 | `figma-fix-variable-bindings` | "Variables on this page are detached, fix them" | Finds detached, orphaned and hardcoded values, shows you a report, and rebinds only after you approve it |
 
-Five `SKILL.md` files and 29 topic files behind them — components and variants, instances, layout
-and geometry, text and fonts, variables and modes, connectors, annotations, publishing hygiene,
-FigJam, the tool layer, building a screen from code. All plain Markdown. Nothing runs on your
-machine, nothing phones home.
+Five `SKILL.md` files and 29 topic files behind them. Eleven of those are the Plugin API pack —
+components and variants, instances, layout and geometry, text and fonts, variables and modes,
+connectors, annotations, publishing hygiene, FigJam, the tool layer, building a screen from code. The
+other eighteen carry the audit checklists, the per-screen briefs, the checks that run afterwards and
+the UX rules. All plain Markdown. Nothing runs on your machine, nothing phones home.
 
 ## Why it's not just prompting
 
