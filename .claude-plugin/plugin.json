@@ -1,0 +1,13 @@
+{
+  "name": "chudarin",
+  "version": "1.0.0",
+  "description": "Five skills for agents that design in Figma, one per stage of the work: plan flows, audit a design system, design screens, write to the Plugin API without silent failures, repair detached variable bindings.",
+  "author": {
+    "name": "Sergey Chudarin",
+    "url": "https://chudarin.com"
+  },
+  "repository": "https://github.com/schudarin/chudarin-figma-skills",
+  "homepage": "https://chudarin.com",
+  "license": "MIT",
+  "keywords": ["figma", "figma-plugin-api", "design-systems", "design-tokens", "skills"]
+}

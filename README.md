@@ -15,7 +15,16 @@ Every skill is plain Markdown: `SKILL.md` + `references/` + `agents/openai.yaml`
 
 ## Install
 
-**Claude Code** — symlink or copy each skill into `~/.claude/skills/` (all projects) or
+**Claude Code, as a plugin** — two commands, and `/plugin update` picks up new versions:
+
+```
+/plugin marketplace add schudarin/chudarin-figma-skills
+/plugin install chudarin@chudarin
+```
+
+The skills then load as `chudarin:figma-design-screens`, `chudarin:figma-plugin-api-rules`, and so on.
+
+**Claude Code, by hand** — symlink or copy each skill into `~/.claude/skills/` (all projects) or
 `<project>/.claude/skills/` (one project):
 
 ```bash

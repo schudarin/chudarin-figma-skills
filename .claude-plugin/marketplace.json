@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "chudarin",
+  "description": "Agent skills by Sergey Chudarin, built and refined on real product files. Currently five skills for designing in Figma.",
+  "owner": {
+    "name": "Sergey Chudarin",
+    "url": "https://chudarin.com"
+  },
+  "plugins": [
+    {
+      "name": "chudarin",
+      "description": "Five skills for agents that design in Figma, one per stage of the work: plan flows, audit a design system, design screens, write to the Plugin API without silent failures, repair detached variable bindings.",
+      "source": "./",
+      "category": "design"
+    }
+  ]
+}
