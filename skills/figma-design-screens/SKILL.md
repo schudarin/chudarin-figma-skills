@@ -33,12 +33,15 @@ When there is one screen, uncertainty cannot be absorbed by quantity. If the bri
 
 | Task type | Visual skill to load |
 |---|---|
-| Mobile screens | `mobile-app-ui-design` |
-| Web, landing pages | `impeccable` |
-| Motion, transitions | `design-motion-principles` |
-| Charts, stats | `dataviz` |
+| Mobile screens | a mobile-UI skill |
+| Web, landing pages | a web / visual-design skill |
+| Motion, transitions | a motion skill |
+| Charts, stats | a dataviz skill |
 
-If none of these four is installed, work without a visual skill — don't invent a name.
+Visual skills come from outside this pack, so their names differ from shelf to shelf. Read the list
+of skills actually available in this host and pick **one**, matched to the task type. If the shelf
+has none, say so and work without one — never invent a skill name or load a plausible-sounding
+substitute.
 
 Every designer agent also loads `figma-use` (mandatory before any `use_figma` call — the Figma plugin skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` in other agents) and `figma-plugin-api-rules`. Load one visual skill, not the whole shelf — more lenses on one task dilute focus rather than adding rigour.
 

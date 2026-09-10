@@ -173,12 +173,23 @@ claude plugin list                          # what is installed right now
 
 ## Recommended alongside
 
+**Nothing in this section is required.** The five skills work installed on their own — the only hard
+requirement is the Figma plugin from step 3. What follows makes the runs better, and every piece of
+it is someone else's skill, not mine.
+
 These skills decide *how* to work in Figma once the task is clear. They don't decide *what* the task
 is. The best runs pair them with a skill that stops the agent before the first action and asks which
 project and which Figma file — with Claude Code that's Anthropic's `superpowers`
 (`claude plugin install superpowers@claude-plugins-official`), where `brainstorming` fires on "add a
 button", asks for the file link, and only then hands over. Any equivalent works. Without one, expect
 the agent to start on the wrong page.
+
+`figma-design-screens` also asks for one visual skill per task — a mobile-UI, web, motion or
+dataviz skill, whichever matches. Those live outside this pack, so it names the role and reads your
+shelf rather than hardcoding a name. The ones I keep installed are `mobile-app-ui-design`,
+`impeccable`, `design-motion-principles` and `dataviz`, plus a `design-critique` skill for the
+review pass — all third-party, so check each one still exists and still does what you want before
+leaning on it. Any equivalent works, and none of the five skills here breaks without them.
 
 Also worth having: a writing skill of your own for button labels and interface text. These skills
 place the text, they don't write it.

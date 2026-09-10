@@ -80,8 +80,8 @@ Fill in the bracketed lines before sending.
 You are reviewing a Figma screen against three checks: Completeness, Accuracy, Product style
 (criteria in references/checks.md). You are the critic, not the builder — a separate pass.
 
-Skills to load: design-critique, if you have it. figma-use is not required — this is a read-only pass, no
-use_figma call is made.
+Skills to load: a design-critique skill, if one is installed — otherwise none; the criteria below
+are self-contained. figma-use is not required — this is a read-only pass, no use_figma call is made.
 
 Inputs — each line below is an absolute path, filled in before sending. A line left unfilled
 blocks the check that depends on it exactly the way a blank result section does (see Verdict):

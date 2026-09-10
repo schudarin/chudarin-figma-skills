@@ -35,9 +35,11 @@ nine self-checks embedded at the block each one governs, follows in the next sec
    closer' (empty-state texture) — do not propose ASCII texture here either."*
 
 2. **Skills to load, minimal stack, in order.** `figma-use`, `figma-plugin-api-rules`, and exactly one
-   visual skill for the task type (`SKILL.md`, "Minimum skill stack") — never the whole shelf.
-   *Example: "Load, in order: figma-use, figma-plugin-api-rules, mobile-app-ui-design. Do not load
-   impeccable or dataviz — this is a native screen, not web or a chart."*
+   visual skill for the task type (`SKILL.md`, "Minimum skill stack") — never the whole shelf. Name
+   the visual skill by what is actually installed here, and name what NOT to load, so the agent
+   doesn't stack lenses.
+   *Example: "Load, in order: figma-use, figma-plugin-api-rules, <the mobile-UI skill on this shelf>.
+   Do not load the web or chart ones — this is a native screen, not web or a chart."*
 
 3. **References, as absolute file paths, with an instruction to look at all of them.** A path the
    agent might skip is a reference that might as well not exist.
@@ -284,8 +286,8 @@ the recipe each dispatched task carries, not a separate document an agent has to
 
 **What this never applies to: the brief to the design agent, and the critic's findings.** A brief
 compressed into a structural checklist in words, with no pictures, and run on an economy model
-produces a screen whose styles change while the design barely does. `caveman`, or any other
-compression, is fair game only for the mechanic's status reports and the log lines in `design.md`
+produces a screen whose styles change while the design barely does. A token-compression skill, whatever it is
+called, is fair game only for the mechanic's status reports and the log lines in `design.md`
 — never for the brief above, and never for a critic's findings, which are useless without the node
 id and the number attached.
 
