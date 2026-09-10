@@ -19,17 +19,16 @@ only a count.
 Technical execution, not beauty and not intent. Every criterion below is checkable by reading node
 properties or numbers, not by eyeballing the screenshot.
 
-- **Tap zones ≥ 44pt.** A 28px-tall field once read as "a caption rule, not a field"
-  — it passed a visual glance and failed the moment someone tried to tap it.
+- **Tap zones ≥ 44pt.** A 28px-tall field reads as a caption rule rather than a field: it
+  passes a visual glance and fails the moment someone tries to tap it.
 - **Integer coordinates.** A frame sitting at `x=132.5` split every edge across two pixels and
   blurred the composition — a half-pixel offset is invisible in the layers panel and obvious on
   export.
 - **Colors bound to variables**, never typed in by hand. A hand-typed hex is a color that silently
   stops following the palette the next time the palette changes.
 - **Spacing follows the project's grid**, not an eyeballed value that happens to look close.
-- **No artifacts that read as a bug.** Stray single pixels left over from a resize were described
-  afterward as looking "more like a bug than a deliberate design choice" — an artifact doesn't
-  announce itself, it has to be looked for.
+- **No artifacts that read as a bug.** Stray single pixels left over from a resize read as a bug
+  rather than a deliberate choice — an artifact doesn't announce itself, it has to be looked for.
 
 **Result:** PASS, or a list of findings, each tied to a node id and a number (position, size, or
 color value) — not a description of the impression it gives.
@@ -38,11 +37,11 @@ color value) — not a description of the impression it gives.
 
 Whether the screen stayed inside how this product looks — checked against the signature-traits
 list and the saved screenshot of approved work in `design.md` (format: `references/state.md`),
-**never against general good-UI conventions**. This is the check that was missing from a real
-run: six fixes that were correct by any UI textbook — grid alignment, baseline alignment,
-rounded corners — passed the critic and were rejected by the user outright, because the product's
-own signature was a sharp corner and a tighter baseline than the textbook calls for.
-Textbook-correct and product-correct are different questions; this check asks only the second one.
+**never against general good-UI conventions**. Six fixes that are correct by any UI textbook —
+grid alignment, baseline alignment, rounded corners — can pass the critic and still be rejected
+outright, when the product's own signature is a sharp corner and a tighter baseline than the
+textbook calls for. Textbook-correct and product-correct are different questions; this check asks
+only the second one.
 
 Separately: was the task solved **inside the product's own vocabulary** — an existing component,
 pattern, or variable — or with an imported technique that solves the immediate problem but doesn't

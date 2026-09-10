@@ -7,12 +7,9 @@ not repeated here; it lives whole in `references/checks.md`, run at step 4.
 
 ## Why the self-check lives inside the template, not next to it
 
-Baseline failure: a brief mandated an identical tab bar across three requested list-screen variants.
-The agent that wrote it diagnosed the failure afterward, correctly, without being told:
-
-> Root cause was MY brief (I mandated the identical tab bar for all three) — but the fix is yours.
-
-The defect was never in an agent's judgment; it was in what the brief handed the agent to judge
+Baseline failure: a brief mandated an identical tab bar across three requested list-screen variants,
+and got three variants that differed everywhere except the navigation. The defect was never in an
+agent's judgment; it was in what the brief handed the agent to judge
 with. A checklist that sits as prose beside the template gets read once and forgotten by the time
 the template is actually being filled in. So the nine checks below are not a list to consult —
 they are blank slots built into the "ready to send" template itself. A slot still holding `[ ]`
@@ -285,10 +282,9 @@ the recipe each dispatched task carries, not a separate document an agent has to
 > characters. Node ids only; for a page overview write a compact dumper that does not descend
 > into instances.
 
-**What this never applies to: the brief to the design agent, and the critic's findings.** An
-early rejected concept came from exactly this mistake made in the wrong place — a brief
-that was a structural checklist in words, no pictures, run on an economy model. The user's verdict:
-"the styles change but the design barely does — sad, and not modern." `caveman`, or any other
+**What this never applies to: the brief to the design agent, and the critic's findings.** A brief
+compressed into a structural checklist in words, with no pictures, and run on an economy model
+produces a screen whose styles change while the design barely does. `caveman`, or any other
 compression, is fair game only for the mechanic's status reports and the log lines in `design.md`
 — never for the brief above, and never for a critic's findings, which are useless without the node
 id and the number attached.

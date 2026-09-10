@@ -82,6 +82,6 @@ async function figmaHygieneSweep(nodeId, mode /* 'post-clone' | 'pre-handoff' */
 }
 ```
 
-## Precedent
+## Why the whole table, not just annotations
 
-On a production admin dashboard: the `description` of a new sidebar component leaked a date, the phrase "by the owner's decision" and a path to an internal task document; on a neighbouring screen foreign annotations that arrived by clone turned up in Dev Mode. A person reading the file caught it, by eye — no check did. Rules for annotations already existed by then — but were applied only to annotations, while `description` counted as "another channel". There are many channels; the rule is one.
+A rule that covers one channel gets applied to that channel only. A component `description` with a date in it, or a node name carrying an internal code name, leaks exactly as far as an annotation does — and no automated check catches either. There are many channels; the rule is one.

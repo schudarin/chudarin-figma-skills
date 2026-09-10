@@ -40,6 +40,8 @@ For every important finding, connect:
 
 When the user provides a Figma URL or selection:
 
+Load `references/analysis-framework.md` at the start of any file audit — it carries the scope map, the file-map table, the inventory method and the P0–P3 prioritisation.
+
 1. Determine the scope: file, page, frame, selection, component set, or flow.
 2. Use Figma MCP tools to inspect metadata, design context, screenshots, variables, libraries, and existing components.
 3. Build a file map.
@@ -127,6 +129,8 @@ For each component or component candidate, document:
 - Examples from Figma
 - Design debt
 - Recommendations
+
+Load `references/component-checklist.md` when documenting or auditing components — the spec structure, the required checks per interactive component, and the order to audit component families in.
 
 Check states for all interactive components:
 

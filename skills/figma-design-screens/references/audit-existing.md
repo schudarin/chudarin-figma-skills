@@ -5,8 +5,8 @@ a screen — it is a **map of what the product currently does and where it fails
 next to the screens it describes. Everything the redesign later claims as an improvement is measured
 against this map, so a wrong note here becomes a wrong screen two phases later.
 
-For scale: one authenticated area of one product came to 84 screens across 9 flow groups and 64
-notes. That is normal, not large — plan the phase as days, not as one pass.
+For scale: one authenticated area of a product runs to roughly 80 screens across 9 flow groups and
+60 notes. That is normal, not large — plan the phase as days, not as one pass.
 
 ## 1. Capture
 
@@ -42,9 +42,9 @@ A critical re-read of one 64-note audit found **17 defects — one in four**. Th
 written by the same agent that had just done the walkthrough, with the observations still fresh, and
 a quarter of them were still wrong. Assume the same rate in your own set.
 
-What it actually finds, with the real examples:
+What it actually finds:
 
-| Category | What it looks like | Real instance |
+| Category | What it looks like | Example |
 |---|---|---|
 | Miscount | A number in the prose contradicts the list right next to it | "three different wordings of one error" — there were two, one counted twice. "duplicates three of them" — the same note then listed four |
 | Contradicting your own observation | The note asserts the opposite of what you verified | "the modal closes neither on Escape nor on clicking the overlay" — clicking the overlay closed it, and that had been tested by hand |

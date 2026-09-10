@@ -42,8 +42,6 @@ If none of these four is installed, work without a visual skill — don't invent
 
 Every designer agent also loads `figma-use` (mandatory before any `use_figma` call — the Figma plugin skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` in other agents) and `figma-plugin-api-rules`. Load one visual skill, not the whole shelf — more lenses on one task dilute focus rather than adding rigour.
 
-Measured once on a real product: a six-skill stack bought nothing — `dataviz` was never loaded, and every accepted frame came from a single `mobile-app-ui-design`.
-
 ## Working a screen
 
 | Step | What happens |
@@ -55,7 +53,7 @@ Measured once on a real product: a six-skill stack bought nothing — `dataviz` 
 | 5 | Show the user |
 | 6 | User hand-finishes it; the resulting screenshot becomes the saved one |
 
-Step 6 is the norm, not an exception — in practice every accepted screen was accepted only after the user finished it by hand.
+Step 6 is the norm, not an exception — expect the user to finish the screen by hand.
 
 A brief must point to a source to clone, not describe anatomy: a cloned node guarantees identical spacing, styles, and bindings; a text description invites the agent to author from scratch, and that drifts.
 
@@ -84,7 +82,7 @@ Model names differ per host (Claude Code, Codex, others); pick by tier, not by n
 
 If the model you need is unavailable — limit, outage, missing access — stop and ask before switching, not after. Disclosing a swap once it's done isn't the same as asking first: by the time there's something to disclose, the hour is already spent on the wrong tool.
 
-The output of a mismatched model is not a reversible draft. It isn't low-stakes because it "can be regenerated or touched up later" — regenerating is redoing the work, and a touch-up can't fix a composition built against the wrong design system. A silent switch has cost a full day: every result of that phase was rejected outright, not touched up.
+The output of a mismatched model is not a reversible draft. It isn't low-stakes because it "can be regenerated or touched up later" — regenerating is redoing the work, and a touch-up can't fix a composition built against the wrong design system.
 
 "The user said to keep going" authorised the work, not the downgrade. Someone stepping away for an hour approved continued progress on the task, not on a weaker tool — the moment the model becomes unavailable is exactly when to interrupt, not push through.
 
