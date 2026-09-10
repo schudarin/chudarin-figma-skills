@@ -19,7 +19,7 @@ only a count.
 Technical execution, not beauty and not intent. Every criterion below is checkable by reading node
 properties or numbers, not by eyeballing the screenshot.
 
-- **Tap zones ≥ 44pt.** A 28px-tall field in a real session read as "a caption rule, not a field"
+- **Tap zones ≥ 44pt.** A 28px-tall field once read as "a caption rule, not a field"
   — it passed a visual glance and failed the moment someone tried to tap it.
 - **Integer coordinates.** A frame sitting at `x=132.5` split every edge across two pixels and
   blurred the composition — a half-pixel offset is invisible in the layers panel and obvious on

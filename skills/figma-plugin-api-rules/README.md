@@ -1,6 +1,6 @@
 # figma-plugin-api-rules
 
-390+ ways the Figma Plugin API breaks when an agent drives it, and what to do instead. Every entry
+393 ways the Figma Plugin API breaks when an agent drives it, and what to do instead. Every entry
 is a real case that failed exactly this way, written as Principle / Symptom / Pattern — not a
 rewrite of the docs.
 
@@ -46,7 +46,8 @@ The full protocol is at the end of `SKILL.md`. In short:
 
 1. One writer at a time. Parallel appends in separate copies diverge and have to be merged by hand.
 2. A new rule is a `### slug` section at the end of the matching topic file, in the
-   Principle / Symptom / Pattern format.
+   Principle / Symptom / Pattern format. No "verified on <file>" trailer — a reader outside your
+   project can't use it, and it's where client names and node ids leak.
 3. A new topic means a new file plus a row in the routing table, in the same commit.
 4. Commit the pack change separately from the task that produced it — otherwise it gets forgotten.
 

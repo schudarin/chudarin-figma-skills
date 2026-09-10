@@ -59,8 +59,8 @@ nine self-checks embedded at the block each one governs, follows in the next sec
    existing text style. If neither exists for what you need, say so instead of typing a value."*
 
 6. **Screen content — data and tasks, not structure.** What the screen must show and let the user
-   do. Layout, navigation, and component choice are the agent's to solve — dictating them is what
-   produced three variants with identical navigation in the source session.
+   do. Layout, navigation, and component choice are the agent's to solve — dictating them is how
+   one brief produced three variants with identical navigation.
    *Example: "The screen must let the user request a reset link by email, see a confirmation
    state, and see an error state for an unregistered email. How these are arranged, and whether
    there's a back button, is yours to solve."*
@@ -103,7 +103,7 @@ of them?
   [ ]
 SELF-CHECK 9 — is there a node id above to clone from, or only a worded description of the
 screen's anatomy? A cloned node keeps spacing, styles, and bindings identical; a description
-invites the agent to author from scratch — that drifted off product style in the source session.
+invites the agent to author from scratch — and authored-from-scratch screens drift off product style.
 If only a description exists, STOP and find a node before sending this brief.
   [ ]
 

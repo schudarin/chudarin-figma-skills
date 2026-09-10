@@ -40,7 +40,7 @@ When there is one screen, uncertainty cannot be absorbed by quantity. If the bri
 
 Every designer agent also loads `figma-use` (mandatory before any `use_figma` call — the Figma plugin skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` in other agents) and `figma-plugin-api-rules`. Load one visual skill, not the whole shelf — more lenses on one task dilute focus rather than adding rigour.
 
-A six-skill stack bought no measured benefit: `dataviz` was never loaded once, and every accepted frame came from a single `mobile-app-ui-design`.
+Measured once on a real product: a six-skill stack bought nothing — `dataviz` was never loaded, and every accepted frame came from a single `mobile-app-ui-design`.
 
 ## Working a screen
 
@@ -53,7 +53,7 @@ A six-skill stack bought no measured benefit: `dataviz` was never loaded once, a
 | 5 | Show the user |
 | 6 | User hand-finishes it; the resulting screenshot becomes the saved one |
 
-Step 6 is the norm, not an exception — every accepted screen was accepted only after the user finished it by hand.
+Step 6 is the norm, not an exception — in practice every accepted screen was accepted only after the user finished it by hand.
 
 A brief must point to a source to clone, not describe anatomy: a cloned node guarantees identical spacing, styles, and bindings; a text description invites the agent to author from scratch, and that drifts.
 
@@ -82,7 +82,7 @@ Model names differ per host (Claude Code, Codex, others); pick by tier, not by n
 
 If the model you need is unavailable — limit, outage, missing access — stop and ask before switching, not after. Disclosing a swap once it's done isn't the same as asking first: by the time there's something to disclose, the hour is already spent on the wrong tool.
 
-The output of a mismatched model is not a reversible draft. It isn't low-stakes because it "can be regenerated or touched up later" — regenerating is redoing the work, and a touch-up can't fix a composition built against the wrong design system. A silent switch cost a full day in the source session: every result of that phase was rejected outright, not touched up.
+The output of a mismatched model is not a reversible draft. It isn't low-stakes because it "can be regenerated or touched up later" — regenerating is redoing the work, and a touch-up can't fix a composition built against the wrong design system. A silent switch has cost a full day: every result of that phase was rejected outright, not touched up.
 
 "The user said to keep going" authorised the work, not the downgrade. Someone stepping away for an hour approved continued progress on the task, not on a weaker tool — the moment the model becomes unavailable is exactly when to interrupt, not push through.
 
@@ -102,9 +102,9 @@ The same rule covers any other condition swapped mid-task — a hung Figma bridg
 
 - "These are identifiable defects against an existing standard" — you don't have the signature-traits list open, so you can't actually judge that.
 - "Confirming element by element burns the window" — a reverted batch costs more than asking would have.
-- "It's low-stakes and reversible, can be regenerated or touched up later" — that's the sentence that preceded a full rejected day.
+- "It's low-stakes and reversible, can be regenerated or touched up later" — that's the sentence that precedes a full rejected day.
 - "The user already said to proceed" — proceeding was authorised, the downgrade wasn't.
 - "There's no signature-traits list, so nothing's off-limits" or "this property is basically part of what they asked for" — empty means unknown, not unrestricted, and unnamed means not requested.
 - "The note says so" — a quarter of the audit notes were wrong on the first pass, and they were written by you. Re-read the note against the screen before designing to it.
-- "Nothing found on the re-read" — on a set over ~20 notes the measured rate is one defect in four, so an empty result is a claim about your re-read, not about the notes.
+- "Nothing found on the re-read" — on a set over ~20 notes the observed rate is one defect in four, so an empty result is a claim about your re-read, not about the notes.
 - "The defect is recorded, so this frame needs that control drawn" — check whether your fix removed the object the defect lived on. If it did, the frame is reassigned, not filled.
