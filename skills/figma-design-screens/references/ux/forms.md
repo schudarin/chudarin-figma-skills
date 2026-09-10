@@ -103,7 +103,8 @@ shows "Vietnam", "Sarah", "14" with no indication of which field is which.
 
 ### A date picker opens where the user was, and refuses impossible ranges
 
-Three rules that turn a calendar from a chore into a control. It opens on the current month by
+These three make a calendar decent; they do not make it the right control for a wide range — for
+that, see "Prefer typing to picking" above, which still applies to a date of birth. It opens on the current month by
 default — but if a date is already chosen, it opens on *that* month, not back at today. Dates
 outside the permitted range are disabled and inert: a future-only field does not let the past be
 clicked, and neither half of a two-month view is an exception. And a range cannot be inverted: if

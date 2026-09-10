@@ -12,26 +12,32 @@ raw numbers cannot be retuned later without touching every node on it.
 **Read:** each padding and gap is bound to a spacing token; raw numbers are findings
 (`figma-plugin-api-rules/references/variables-and-tokens.md` for the binding mechanics).
 
-### The step is 8, and that is not arbitrary
+### The product's own step wins; 8 is what to use when there is none
 
-An 8-based step divides cleanly into the great majority of real screen widths, which makes fitting
-a layout to a device arithmetic rather than negotiation. It also survives fractional scaling: at
-1.5× an odd number lands on a half pixel — 5 becomes 7.5 — and the renderer rounds it somewhere you
-did not choose. And a step of 8 is far enough apart to be told apart by eye, so whoever builds the
-screen measures less and guesses right more often.
+**Read the grid out of the design system before assuming one.** A product on a 4-step or a 10-step
+scale is not making a mistake, and reporting its spacing as findings against someone else's grid is
+the exact failure this set warns about in "Growing this set". The step belongs to the product.
 
-Why not 4 or 6: too many options, and the difference between neighbouring steps stops being
-visible, so the scale stops constraining anything. Why not 10: too few, and the layout gets coarse.
+Where there is nothing to inherit — a new product, a file with no scale — start at 8, for reasons
+that are worth knowing either way. An 8-based step divides cleanly into the great majority of real
+screen widths, which makes fitting a layout to a device arithmetic rather than negotiation. It
+survives fractional scaling: at 1.5× an odd number lands on a half pixel — 5 becomes 7.5 — and the
+renderer rounds it somewhere nobody chose. And a step of 8 is far enough apart to be told apart by
+eye, so whoever builds the screen measures less and guesses right more often. Smaller steps stop
+constraining anything, because neighbouring values become indistinguishable; much larger ones make
+the layout coarse.
 
-**Read:** the distinct spacing values on the screen, each divisible by 8.
+**Read:** the step recorded in `design.md` or read from the design system, then every spacing value
+on the screen against *that* step.
 
-### 4 is the exception, and it is written down
+### Half a step is the exception, and it is written down
 
-Half a step exists for the cases that genuinely need it — an icon against its label, a badge on an
-avatar, optical alignment of two shapes with different weights. It is not the general-purpose
-escape hatch, and a screen where half-steps outnumber steps has no scale at all.
+Half of whatever the step is exists for the cases that genuinely need it — an icon against its
+label, a badge on an avatar, optical alignment of two shapes with different weights. It is not the
+general-purpose escape hatch, and a screen where half-steps outnumber whole ones has no scale at
+all.
 
-**Read:** count the 4s; each one should have a reason you can name.
+**Read:** count the half-steps; each one should have a reason you can name.
 
 ### Align to the grid on both axes, including the text
 

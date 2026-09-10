@@ -1,7 +1,9 @@
-# Copy and control rules — index
+# UX rules — index
 
-Product-agnostic rules, each one earned by having a specific screen rejected for it. This file is
-the routing table; the rules themselves live in `ux/*.md`.
+Product-agnostic rules for what goes on a screen. Some were earned by having a specific screen
+rejected for them, some come from a production component library, some are standard practice worth
+writing down because an agent will not infer them. This file is the routing table; the rules
+themselves live in `ux/*.md`.
 
 **Two moments read this set, and they read it differently.**
 
@@ -16,9 +18,9 @@ the routing table; the rules themselves live in `ux/*.md`.
 | The screen contains | Read |
 |---|---|
 | prose — hints, messages, descriptions, empty-state text | `ux/copy.md` |
-| a control the user reads before pressing — button, link, menu item | `ux/labels.md` |
+| what a control is *called* — button, link, menu item, a dialog's answers | `ux/labels.md` |
 | a field, a form, validation, one step of a multi-step flow | `ux/forms.md` |
-| a link, a button, a dropdown, a picker, a panel that opens | `ux/controls.md` |
+| *which* control, and how it behaves — pickers, panels, targets, gestures | `ux/controls.md` |
 | saving, cancelling, deleting, acting on a selection | `ux/actions.md` |
 | anything that can be missing or can fail | `ux/states.md` |
 | anything that arrives asynchronously | `ux/loading.md` |
@@ -43,8 +45,8 @@ what to change; skip it for a one-element edit.
 Principle first, then how to verify it. Verification is one of two kinds, and the Accuracy pass
 treats them differently:
 
-- **Read** — verifiable by reading node properties or numbers. A finding names the node and the
-  number; no taste is involved.
+- **Read** — verifiable without judging the render: node properties, numbers, or the strings
+  themselves. A finding names the node and the value it holds; no taste is involved.
 - **Look** — verifiable only on the render. Say what you looked at and what you saw; "looks fine"
   is not a result.
 

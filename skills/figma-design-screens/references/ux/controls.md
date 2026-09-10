@@ -9,14 +9,14 @@ picker, or any panel that opens. What the controls are *called* is in `ux/labels
 
 | Options | Single choice | Multiple choice |
 |---|---|---|
-| 2–6, all worth showing | radio buttons | checkboxes |
-| 4 ± 1, short labels | a segmented group | — |
-| more than 6, or long labels | a dropdown | a multi-select |
-| many, with search | a combobox (see below) | a multi-select with search |
+| 2–6 | radio buttons | checkboxes |
+| more than 6, or labels of more than a few words | a dropdown | a multi-select |
+| more than fits a panel, or unknown in advance | a combobox — search in the field itself | a multi-select with search |
 
-A segmented group with five long labels is a row of tabs pretending to be a control; past that
-count, or past a few words per label, move to tabs or to a dropdown. Radio buttons past six become
-a list nobody reads to the end.
+A **segmented group** is a presentation choice inside the first row, not a fourth option: it works
+at three to five short labels and stops working past that — five long labels is a row of tabs
+pretending to be a control, and then it should be tabs. Radio buttons past six become a list nobody
+reads to the end.
 
 **Read:** the option count and the longest label against the control chosen.
 
@@ -47,7 +47,8 @@ running that check (`ux/accessibility.md`).
 A combobox — not a separate search input inside the dropdown. Two inputs for one task make the
 focus jump, and the typed text ends up somewhere other than the field being filled.
 
-**Read:** the panel has an input while the trigger field is empty — that combination is the defect.
+**Read:** whether the dropdown panel contains an input of its own. One inside a panel whose trigger
+field is not itself typable is the defect.
 
 ### Which way a panel opens is arithmetic, not preference
 

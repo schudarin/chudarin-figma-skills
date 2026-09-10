@@ -92,6 +92,16 @@ progress bar that jumps backwards costs more than it ever bought.
 
 **Use it when:** a task has more than two steps.
 
+### A wait that shows its work feels shorter — the labour illusion
+
+People perceive a wait as shorter, and the result as worth more, when they can see that work is
+being done. That is why a skeleton animates and a multi-step import names the step it is on, rather
+than both sitting still. The effect runs the other way too: something that returns instantly can
+read as not having tried — but manufacturing delay to exploit that is theatre, and users who notice
+stop trusting the rest of the screen.
+
+**Use it when:** designing any wait over a second (`ux/loading.md`).
+
 ### A polished screen hides its usability faults — aesthetic-usability effect
 
 Users forgive, and fail to report, problems in an interface they find attractive. So "they liked

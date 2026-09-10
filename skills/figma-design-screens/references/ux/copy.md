@@ -16,7 +16,7 @@ single label ending in a full stop reads as a fragment of prose rather than a pi
 
 The heading above a list is a label, so it ends bare. A bullet that is one fragment or one sentence
 ends bare too; a bullet that runs to two sentences takes a stop after each, like any prose. Mixed
-punctuation down a single list is the most visible sloppiness in an otherwise careful screen.
+punctuation down one list is visible even to a reader who could not say what is wrong.
 
 **Read:** the terminal characters down each list, and the heading above it.
 
@@ -47,8 +47,8 @@ without adding information, and it makes short strings sound like a policy docum
 ### Turn nominalizations back into verbs
 
 "Performs the consultation of clients" is "consults clients". A noun made out of a verb drags
-helper words with it and buries the action two words deep. This is the single highest-yield edit in
-interface prose.
+helper words with it and buries the action two words deep. It is usually the shortest edit with the
+largest effect on a sentence.
 
 **Read:** nouns ending in the language's verbal-noun suffixes, each with a helper verb in front.
 

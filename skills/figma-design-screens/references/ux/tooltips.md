@@ -52,6 +52,8 @@ Bound to a trigger element, an action or an event. It can carry a link or a butt
 input surface — the moment the user is filling something in, the container is a sheet or a modal
 (`ux/navigation.md`).
 
+**Read:** the popover's children — no field, no more than one action.
+
 ### It may open by itself, but it closes only by intent
 
 The system is allowed to raise it. Only the user dismisses it — hovering away is not a dismissal,

@@ -19,8 +19,8 @@ missing.
 
 ### An empty state says what belongs here and offers the one action that fills it
 
-Not "No data". What this place is for, and the single next step. This is the most attentive moment
-the user will ever give the screen, and a blank panel spends it on nothing.
+Not "No data". What this place is for, and the single next step. An empty list is one of the few
+moments the user has nothing else to read, and a blank panel spends that attention on nothing.
 
 **Read:** the empty frame contains a sentence about the purpose and exactly one primary action.
 
