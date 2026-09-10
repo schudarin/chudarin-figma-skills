@@ -25,9 +25,12 @@ themselves live in `ux/*.md`.
 | anything that can be missing or can fail | `ux/states.md` |
 | anything that arrives asynchronously | `ux/loading.md` |
 | a hint, a hover explanation, an onboarding tour | `ux/tooltips.md` |
-| real data — names, amounts, dates, long strings, tables, paragraphs | `ux/content.md` |
+| real data — names, amounts, dates, long strings, paragraphs | `ux/content.md` |
+| rows of the same kind of thing — a table, a list of records | `ux/tables.md` |
+| a search field, filter controls, a saved query | `ux/search.md` |
 | a place inside a flow, an overlay, a set of screens to move between | `ux/navigation.md` |
 | anything that appears, disappears, expands or moves | `ux/motion.md` |
+| more than one screen width — so, nearly always | `ux/responsive.md` |
 | any padding, gap, margin or position — so, always | `ux/spacing.md` |
 | anything at all | `ux/accessibility.md` |
 
