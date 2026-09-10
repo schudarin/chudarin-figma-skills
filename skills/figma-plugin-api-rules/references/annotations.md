@@ -78,7 +78,6 @@ newNode.annotations = [{
   categoryId: source.categoryId,
 }];
 ```
-Verified on a production admin dashboard — a paired pagination annotation on one page, copied from another.
 
 ### stale-annotation-survives-clone-or-redesign
 **Principle:** A Dev Mode annotation inherited by cloning keeps describing the DONOR's state (or the node's state BEFORE a redesign), not the current reality of the target node — it survives both a structural redesign of the component (a dropdown button became a plain button, but the annotation "the dropdown combines N actions" stayed attached to the new node on every clone) and the cloning of a whole structure between semantically different elements (an Action bar with one domain's gating logic copied as a template for another domain's Action bar together with its annotation, although the new node behaves differently — e.g. a plain "Delete" button without gating).
@@ -94,13 +93,11 @@ figma.currentPage.findAll(n => n.annotations && n.annotations.length > 0).forEac
   });
 });
 ```
-Verified on a production admin dashboard (an independent audit) — 18 nodes with an identical stale annotation about a combined dropdown action that survived a header redesign into plain buttons; separately 1 node ("Delete") elsewhere in the same audit inherited an annotation with another tab's gating logic of the same admin dashboard when the Action bar structure was cloned for another domain.
 
 ### clone-inherited-annotations-dedup-component-vs-flow-sections
 **Principle:** When flow/scenario sections are assembled by CLONING already-annotated component shells (see `stale-annotation-survives-clone-or-redesign`), every clone drags the donor's FULL set of component Dev Mode annotations — and one component mechanic (scrolling, a button's semantics, a row variant) ends up multiplied across dozens of nodes across all scenarios. These aren't "stale" annotations (the text may be right) but DUPLICATES: one and the same fact about the component repeated N times.
 **Symptom:** an annotation walk over a group of flow sections finds K component annotations, each with identical text on M nodes (M = the number of clones) — dozens of repeats; meanwhile the flow mechanics themselves (what THIS transition demonstrates) are often not annotated at all, and new sections without clones are empty.
 **Pattern:** split into TWO SSOTs so that no annotation repeats: (1) **component mechanics** — only in the canonical component section (the component/states matrix), where they're documented anyway; (2) **flow sections carry ONLY unique flow annotations** (one per scenario transition). Procedure: an annotation walk over each section → group by text → remove the component duplicates from the clones (`node.annotations = []`), keep/fill in one flow annotation per section → duplicate the final set into a paired doc (an SSOT backup + a "documented-in" column for a two-way annotations↔docs check). The dedup strategy (remove the component ones entirely vs keep one copy) is confirmed by the owner — it changes whether a flow section is self-sufficient on mechanics.
-Verified on one project: 10 scenario clone sections carried 44 copies of 7 component annotations; removed (they live in the Matrix section), 3 kept + 8 unique flow ones filled in = 11 nodes, 0 duplicates; the paired SSOT was kept in a separate document.
 
 ### annotations-not-supported-on-section-nodes
 **Principle:** `node.annotations = [...]` on a node of type `SECTION` throws `TypeError: no such property 'annotations' on SECTION node` — Dev Mode annotations are supported on ordinary scene nodes (FRAME/INSTANCE/TEXT/COMPONENT etc.), but not on the SECTION wrapper itself.
@@ -114,13 +111,11 @@ section.annotations = [{ label: '...', categoryId: '273:0' }];
 const header = section.findOne(n => n.type === 'TEXT');
 header.annotations = [...(header.annotations || []), { label: '...', categoryId: '273:0' }];
 ```
-Verified on a production admin dashboard — an attempt to mark a tag-values reference (a SECTION) as "illustrative" failed; fix — a second annotation entry on the section's already-annotated heading TEXT.
 
 ### clone-carries-dev-mode-annotations-invisibly
 **Principle:** `node.clone` carries the node's Dev Mode annotations along with it, including annotations on nested nodes. In normal mode they're invisible — neither on the render nor in a structural check — so the clone "looks clean" while in Dev Mode it has foreign pins with facts about another screen, another resource and links to foreign tickets.
 **Symptom:** on a new screen in Dev Mode there are annotations nobody added there: the text describes the donor's behaviour ("filter by entity status", links to `entity.api.ts`), although another section was assembled. A screenshot and a tree walk by types/names show no discrepancy.
 **Pattern:** after any block transfer by clone — `await figmaHygieneSweep(clonedRoot.id, 'post-clone')` from `publishing-hygiene.md` (a single sweep: removes annotations unconditionally and checks names/description/TEXT in one pass); set your own annotations anew if the fact is relevant to the new node.
-Verified on a production admin dashboard — while assembling a pilot screen of one of the sections, a clone of a filters modal from an accepted screen brought two annotations (`select`, `date range`) with facts about a domain entity and links to `SomeModal.tsx`; found only by the owner when viewing in Dev Mode.
 
 ### annotations-read-returns-label-and-empty-labelmarkdown-write-rejects-both
 **Principle:** Reading `node.annotations` returns objects that have BOTH fields — `label` with a value and `labelMarkdown: ""` (an empty string). Writing accepts strictly one of them. So the classic round trip "read → change → write back" fails: `Only one of label or labelMarkdown should be given`. An empty string doesn't count as an "absent" field.
@@ -134,7 +129,6 @@ node.annotations = [...node.annotations, existing];
 node.annotations = [{ label: TEXT, categoryId: '145:1' }];
 ```
 Take only existing categories — `await figma.annotations.getAnnotationCategoriesAsync`; in the verified files those are `145:0 Development`, `145:1 Interaction`, `145:2 Accessibility`, `145:3 Content`.
-Verified on a mobile app file — setting annotations on a confirmation modal and on a settings row; the read returned both fields on each of the nodes; the write passed only when the object was built from scratch.
 
 ### node-annotations-property-not-recursive-false-negative-on-verify
 **Principle:** `node.annotations` returns the annotations of THIS specific node ONLY — not the descendants'. A check "is there an annotation in this subtree" via `topNode.annotations.length === 0` gives a false negative if the annotation sits not on the very top node (sheet/frame) but on a nested child 2–3 levels deeper (which is typical — it's logical to place an annotation on the upload component/list itself, not on the whole sheet).
@@ -148,7 +142,6 @@ const hasAnnotation = topNode.annotations && topNode.annotations.length > 0;
 const annotated = topNode.findAll(n => n.annotations && n.annotations.length > 0);
 const hasAnnotation = annotated.length > 0;
 ```
-Verified on a product mobile-app file — an independent review claimed the annotation wasn't built on any of 3 surfaces ("no annotations"); a repeat check on the same file found all three annotations in place, on the nested the drop-zone component/the entry list, not on the root sheet node, which apparently was what got checked directly.
 
 ### annotation-writes-via-getnodebyidasync-need-no-page-switch
 **Principle:** `figma.getNodeByIdAsync(id)` + a direct property mutation (`node.annotations = [...]`, `node.characters`, any setter) works without `await figma.setCurrentPageAsync(...)`, regardless of which page the node physically lies on — `setCurrentPageAsync` is needed only for page-relative operations (`figma.currentPage.appendChild`, `page.findAll`, `page.children`), not for a targeted read/write by an already-known id. This is separate from the rule `cross-page-appendchild-moves-node` (that one is about moving a node BETWEEN pages via `targetPage.appendChild`); here it's about a targeted edit WITHOUT a move.
@@ -161,10 +154,8 @@ for (const item of ITEMS) {
   node.annotations = [{ label: item.label, categoryId: item.categoryId }];
 }
 ```
-Verified on a product mobile-app file — a batch write of 49 new Dev Mode annotations split into 5 calls of ~8–12 each (the "≤10 logical operations per call" limit, not per page); the nodes of each batch freely mixed between `02 Section A`/`03 Section B`/`05 Section C`; not one call switched the page and all writes succeeded.
 
 ### annotation-verify-pass-misses-language-consistency-unless-asked
 **Principle:** An LLM verifier explicitly given a text-hygiene checklist (dates/names/paths/service vocabulary/negations) and a fact check against a packet file reliably catches those specific violations — but checks nothing the checklist doesn't name literally. The text's language (conformance to the file's convention — here all annotations in Russian) isn't part of the standard hygiene list, and a verifier that didn't get an explicit "check the language" silently passes an annotation written in another language.
 **Symptom:** an adversarial verify pass over 52 annotation drafts gave 27 approved + 25 needs_revision on content/format — not one verdict mentioned that 2 of the drafts (siblings, the same wording) were entirely in English while the other 50 were in Russian. The difference was found only by a separate, non-LLM pass (a deterministic regex for Cyrillic).
 **Pattern:** when composing a verify prompt for annotations — explicitly list any file-wide convention (language, tone, node-number format, etc.) the draft must obey, rather than relying on an "obvious" inconsistency being caught within a general "check for violations" assignment. Additionally — a deterministic regex sweep (Cyrillic/Latin, dates, service words) over ALL final texts before writing to Figma as a cheap last line of defence, independent of LLM verdicts.
-Verified on a product mobile-app file — an annotation cluster about a floating chat button returned both drafts in English (`Floating chat button, fixed to the bottom-right corner...`); the verify agent issued `needs_revision` only for paragraph formatting and didn't notice the language; caught and translated by a separate regex pass of the orchestrator before the write.

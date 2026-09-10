@@ -127,7 +127,6 @@ const labelVarId = labelNode.fills[0].boundVariables.color.id; // e.g. 'Variable
 const matchingIconVar = await figma.variables.getVariableByIdAsync('VariableID:3:22'); // icon/inverse — the same role suffix
 iconVector.strokes = [bindColor(matchingIconVar)];
 ```
-Verified in a design-system file — a `Chip` `State=active` icon slot: the first attempt with `icon/accent` merged with the fill's black background (in Light mode `icon/accent`≈`fill/accent-primary`, both dark); the fix to `icon/inverse`, mirroring the Label, which was already on `text/inverse`, not on `text/accent`.
 
 ### deltae-color-matcher-must-check-token-opacity-not-just-rgb
 **Principle:** An automatic colour matcher (a fuzzy match of a raw hex to the nearest palette variable via deltaE/Lab distance) compares only RGB — but in semantic palettes tokens with a `-tint`/`-tint-low` suffix are often canonically defined as THE SAME base colour at alpha < 1 (e.g. `fill/warning-tint` = the same hex as `warning`, but `a:0.12`), and `*-inverse` — as a colour meant for text/icons ON a dark background (in the Light theme it may resolve to a hex accidentally close to the needed light tone but semantically "the other way round"). A matcher blind to alpha and to the role suffix picks such a token by pure RGB proximity as if it were a plain solid equivalent — and `setBoundVariableForPaint` then carries the variable's alpha onto the paint, really making the element translucent/barely visible.
@@ -140,7 +139,6 @@ if (node.fills[0].opacity < 0.95) {
   // suspicious — the matched token is probably "-tint"/"-inverse"; check the semantic correctness of the context
 }
 ```
-Verified on a tokenisation task (a finance-domain app) — the auto-matcher bound a decorative theme icon to `fill/warning-tint` (the same RGB as `icon/warning`, but alpha=0.12) and 2 placeholder texts to `text/tertiary-inverse` (RGB accidentally close to the light placeholder tone) — both cases were found by the user visually on the final screenshot, not by the binding process itself; fixed by switching to a solid alias of the same family (the icon) and rolling back to raw hex (the placeholders; no solid equivalent was found).
 
 ### tokenizing-container-bg-can-unmask-sibling-raw-white-as-visible-box
 **Principle:** If a container's background and the background of a nested/neighbouring element originally coincide as raw hex (both `#FFFFFF`, both unbound) — they visually merge ("invisible") regardless of both being technically untokenised. Tokenising ONLY the container to a semantic variable (`fill/bg/secondary` etc., which is almost-but-not-exactly white, e.g. `#F9F9FB`) leaves the neighbouring element at the old pure `#FFFFFF` — the pair that used to be identical diverges by 1–2 RGB units, and the previously invisible boundary becomes a noticeable rectangle/blot.
@@ -152,7 +150,6 @@ const suspects = container.children.filter(c => c.fills?.[0]?.type === 'SOLID' &
   && c.fills[0].color.r > 0.98 && c.fills[0].color.g > 0.98 && c.fills[0].color.b > 0.98);
 // suspects.length > 0 — tokenise them with the same variable as the container BEFORE moving to the next node
 ```
-Verified on a task (a finance-domain app) — binding a the nav bar instance's background to `fill/bg/secondary` instantly exposed 2 inactive tabs (the nav element instance fill, raw `#FFFFFF`, untouched in the same pass) as visible white squares on the lightened navbar background — caught by screenshot right after the binding, fixed by a synchronous binding of both the nav element to the same `fill/bg/secondary`.
 
 ### harvest-variable-ids-from-bound-nodes-when-local-collection-is-empty
 _See the open caveat in `getvariablebyidasync-null-remote-variable` above — the same call under a similar condition is documented there as returning `null`._
@@ -174,7 +171,6 @@ const walk = async n => {
   if (CONTAINER_TYPES.has(n.type)) for (const c of n.children) await walk(c);
 };
 ```
-Verified on a production admin dashboard: the file's local collection held one variable; a harvest over a section gave 21 fill tokens and 11 stroke tokens with names and actual colours — and from it, it became clear which token the system assigns to the grey `#f2f4f7`, which settled the stroke-binding question.
 
 ### setboundvariableforpaint-returns-frozen-paint-and-drops-source-opacity
 **Principle:** `figma.variables.setBoundVariableForPaint(paint, 'color', v)` returns a NEW paint whose **own `opacity` from the source paint is reset to 1** — only the colour is bound; the paint's own alpha isn't carried over. Worse: the returned object is **frozen**, so a head-on fix (`newPaint.opacity = 0.7`) is a silent no-op: no error, `fills` is assigned, and on a repeat read the opacity is still 1. Opacity can be restored only on a PLAIN copy (`JSON.parse(JSON.stringify(...))`), not on the returned object. The same trap in the other direction: setting `opacity` on a paint *before* it's on the node clobbers it to 1 (a solid fill; same-colour text becomes invisible) — e.g. an eyebrow chip at `Action/Regular` 0.16 renders solid and its text vanishes.
@@ -208,8 +204,6 @@ bar.fills = [flat];
 
 **Verify by render, not only by structure.** The difference between `0.7` and `1` on a 3 px bar isn't obvious to the eye. A cheap objective check — sample a pixel inside the element and compare with the composite `255 + (channel − 255) × opacity` over the background: at 0.7 over white `#79ce64` gives `(161,221,146)`, at 1.0 — `(121,206,100)`; the distance between the hypotheses is two orders of magnitude above rounding error.
 
-Verified on a finance-product file — react-toastify toast progress bars (`opacity: 0.7` — the library default, code parity), 8 bars in three sections: after binding to `fill/negative-primary` / `fill/accent-primary` / `fill/positive-primary` all became opacity 1; a separate second call fixed all eight; the in-call plain copy — only one.
-
 ### check-collection-modes-before-normalising-onto-a-flavour-named-variable
 
 **Principle:** Before "normalising" a token muddle onto a variable with a brand/flavour in its name (`BRD1/…`, `BRD2/…`, `Brand X/…`), check which collections both sides come from and how many modes they have. The typical layout in a multi-brand file: there is a **multi-mode** collection (`Brand` with a mode per flavour) and there are **single-mode** variables in the design system named after a flavour (`BRD1/CO\BRD1\ThemePrimary`). Their values coincide, so by colour they're indistinguishable — but the first switches with the frame and the second is nailed down forever. The intuition "bring everything to the variable with the right brand in the name" leads exactly the wrong way: it freezes the flavour.
@@ -225,7 +219,6 @@ let n = frame, pins = {};
 while (n && n.type !== 'PAGE') { Object.assign(pins, n.explicitVariableModes || {}); n = n.parent; }
 // non-empty pins on a multi-mode collection = the frame already knows how to switch; don't break it
 ```
-Verified on a paywall-redesign task — in an app paywall mockup the teal of the header and CTA sat on `Brand/400` (20 modes, one per flavour; the frame pins a specific brand), while the feature-list icons sat on a single-mode variable named after the same brand (1 mode). The original plan was to bring everything onto that flavour variable as "the canonical brand variable from the design system"; checking the modes before writing reversed the direction — 13 icons rebound to `Brand/400`, and the whole screen stayed switchable with one pin.
 
 ### same-role-different-family-may-alias-identical-primitives
 **Principle:** "Rebind the glyph from `text/<role>` to `icon/<role>`" is a semantic edit but NOT necessarily a visual one: in a semantic collection both variables often alias the same primitive in EVERY mode. Before declaring such a rebind "visible in N themes" and requiring the owner's decision — unwrap the alias down to the primitive in every mode of both variables and compare. The number of modes is identical for variables of one collection by construction; only the alias target can diverge.
@@ -241,7 +234,6 @@ for (const m of col.modes) {
   }
 }
 ```
-Verified on a production admin dashboard: `text/accent` and `icon/accent` in the `Semantic Palette` collection (4 modes) alias `blue/50` / `blue/60` / `violet/60` / `orange/60` — the same in every mode; likewise for `text/tertiary` and `icon/tertiary` (`gray/60`, `gray/80-50`). The rebind is invisible in all themes and needed no owner decision — the earlier task note claimed the opposite.
 
 ### hex-match-scan-must-include-opacity-not-just-rgb
 **Principle:** A script "scan the scene for hard-coded colour X → bind what's found to a variable" must key the match on `hex(color) + opacity`, not only on the `#rrggbb` from `paint.color`. `paint.color` stores ONLY the RGB channel; alpha lives separately in `paint.opacity`. Comparing a candidate node with the target opaque hex by a bare string `'#' + r + g + b === '#ffffff'` without checking `opacity` falsely matches ANY translucent paint of the same RGB (e.g. `rgba(255,255,255,0.3)`), because the RGB part is identical and alpha takes no part in the comparison at all.
@@ -261,7 +253,6 @@ function hexWithAlpha(paint) {
 }
 if (hexWithAlpha(paint) === '#ffffff') bindPaint(node, targetVar); // '#ffffff30' won't match; stays untouched
 ```
-Verified on a token-hygiene task of a mobile app (one of the sections) — the read-only inventory script correctly told `#ffffff` (opaque) from `#ffffff` @ opacity 0.3 apart (two different buckets, the second marked `missing-on-figma`, not planned to be touched). The subsequent write script for S2 hygiene used a rewritten `hex` function without the alpha suffix — the `opacity=0.3` node matched the `=== '#ffffff'` check and got an `icon/inverse` bind; the opacity silently reset to `1`. Caught by the same session's post-check (re-reading the node's actual state, not trusting the script report's text), returned to the original state by hand.
 
 ### setboundvariable-invalid-for-stroke-paint-color
 **Principle:** `node.setBoundVariable('strokes', index, variable)` doesn't bind a variable to the colour of a paint object in the `strokes` array — the right way: build the paint object, run it through `figma.variables.setBoundVariableForPaint(paint, 'color', variable)`, and assign the result to `node.strokes = [paint]`.
@@ -277,7 +268,6 @@ let paint = { type: 'SOLID', color: { r: 0, g: 0, b: 0 } };
 paint = figma.variables.setBoundVariableForPaint(paint, 'color', variable);
 node.strokes = [paint];
 ```
-Verified on a production admin dashboard, a detail-grid adaptive-pattern pilot — the original plan text used exactly the wrong form; replaced with `setBoundVariableForPaint` at execution.
 
 ### addmode-copies-existing-mode-values-not-blank
 **Principle:** `VariableCollection.addMode(name)` doesn't create a new mode with empty/default values — Figma copies into it the values FROM AN ALREADY EXISTING mode of the collection (by observation — not necessarily the first in the list; in the real case the new mode received a copy of a mode's values that at that moment hadn't yet been brought to its final state). If any interval passes between `addMode` and the completion of the data edit in the file — the new mode temporarily (or permanently, if unchecked) holds references to what was there BEFORE the edit, including the variables the edit intended to orphan and delete.
@@ -291,7 +281,6 @@ for (const v of allVarsInCollection) {
   if (sourceVal !== undefined) v.setValueForMode(newModeId, sourceVal);
 }
 ```
-Verified on a component library file, Brand A colour-theme placeholder modes — `addMode('Brand A Light'/'Brand A Dark')` copied legacy pre-rebind values; the "what else references the 32 deletion candidates" check run right after caught it (and a second time — one more missed reference via `border/accent-primary`), preventing the deletion of live variables.
 
 ### empty-scopes-array-is-a-distinct-state-not-all_scopes-serialization
 **Principle:** `variable.scopes = []` is a SEPARATE, meaningful value ("hidden from all property pickers"), not how the `ALL_SCOPES` default serialises on readback. An explicitly set `ALL_SCOPES` reads back literally as the array `["ALL_SCOPES"]`, not as an empty array — both states are programmatically distinguishable. In files with a two-tier token architecture (primitives → semantics) this is NOT a bug but a deliberate convention: the primitive collection (`Colors-base`-like) keeps all its variables at `scopes: []` so the designer doesn't see hundreds of raw hex primitives in the fill/stroke/text picker — the path to a colour goes only through semantic tokens, which, conversely, carry meaningful role scopes (`["TEXT_FILL"]`, `["FRAME_FILL","SHAPE_FILL"]`, etc.).
@@ -309,7 +298,6 @@ const existingSample = await Promise.all(
 const allEmpty = existingSample.every(v => v && v.scopes.length === 0);
 // allEmpty === true → the new primitives also get scopes: [], not an explicit fill/text list
 ```
-Verified on a component library file, a Brand A colour-theme sync — 47 new primitives (`green/*`, `brown/*`, `neutral/*`, `dark/*`) in `Colors-base`; the task explicitly demanded "explicit scopes, not ALL_SCOPES", but a live check of the convention showed: all 268 existing primitives of the collection are `scopes: []`, while `Semantic Palette` (an adjacent but differently-roled collection) carries real role scopes (`["FRAME_FILL","SHAPE_FILL"]`×38, `["TEXT_FILL"]`×24, etc.) and exactly 3 variables with a literal `["ALL_SCOPES"]` — proof that `[]` isn't the default's serialisation. Decision — `scopes: []` for all 47, contrary to the task's literal text — independently re-checked by a second agent (adversarial review) with the same method; confirmed.
 
 ### editing-shared-primitive-in-place-vs-new-primitive-plus-per-mode-repoint-have-opposite-cascade-scope
 
@@ -332,7 +320,6 @@ for (const v of allSemanticVars) {
 // usages holds ONLY the desired scope → safe to edit the primitive in place
 // usages holds roles/modes that mustn't change → a new primitive + a re-point per each (token, mode)
 ```
-Verified on a component library file — a Brand B Light / Brand A Light positive/negative/warning contrast fix. `green/50` was Brand B-Light-exclusive (the in-place edit reached Brand A for free); `red/60`/`yellow/60` were shared with the dark-mode border and the fill of both themes (new primitives + an explicit per-brand re-point — Brand A Light needed a separate second write after Brand B Light).
 
 ### harvest-sibling-brand-alias-map-as-transplant-template-for-new-brand
 
@@ -343,10 +330,6 @@ Verified on a component library file — a Brand B Light / Brand A Light positiv
 **Pattern:** (1) harvest the sibling brand → a table of formulas; (2) classify each of the 129 slots: sourced (present directly in the new brand's source — it always has priority) vs derived (transferred by the sibling's formula, but onto ITS OWN primitives); (3) for derived — formulate explicit, uniform rules BEFORE writing the script (e.g. "hover = index+1 in the same radix ladder", "tint/tint-low = alpha 12%/8% of `strong`", "`-inverse` = the same token's value in the opposite mode"); don't decide each slot anew; (4) create the missing alpha/hover primitives in ONE pass, computing them programmatically from the already-created base primitives (not transcribing hex by hand — a typo risk); (5) write the mapping table as data (an array of triples), not as assignments scattered through the code — so it can be checked for completeness (`missingSlots.length === 0`) at one glance at the script's return.
 
 **Limitation of the method:** the sibling brand's formula transfers the TOPOLOGY of relations (which primitive role corresponds to which semantic slot), not the values themselves — the final colours must still be shown to the owner as a screenshot BEFORE treating the theme as finished; the method reduces the number of correction rounds; it doesn't cancel the visual review itself.
-
-Verified on a component library file — a the new brand→Brand C brand transition. The the new brand patch covered 36/129 slots; a harvest of Brand A Light/Brand A Dark (129×2 alias triples, one call, no truncation) gave the formula for the remaining 93 — transferred onto the new the new brand primitives / the new brand primitives / the new brand primitives primitives (12-step radix ladders + 3-step status ladders, unlike Brand A's 9-step one 9-step ladder/another 9-step ladder — the method transferred equally well to a structurally different ladder, because the formula is role-based, not step-based). The first visual pass (a screenshot of both new frames) went without obvious defects — that doesn't mean "done"; it means "the method removed the gross errors; fine correction is still ahead".
-
-Re-verified, the same file — a the new brand→Brand D transition (the third tenant of the "3 new tenants" plan). The the new brand patch (a structurally identical mapping scheme to the new brand) covered 39/129 slots; this time the donor was the already finished **Brand C**, not Brand A (a fresher, second confirmed run of the method, not the first draft). A mechanical replacement of the `the new brand-` → `the new brand-` prefix in the 129 harvested rows worked one to one, including the transfer of the donor's meaningful asymmetries (e.g. `text/accent` / `border/neutral-primary` use DIFFERENT primitive families in light and dark modes — the donor's topology preserved that without manual intervention). The method removed the gross errors in one pass for the third time running (0 missing, 0 errors) — the fine owner correction (see `swap-primitive-values-not-aliases-to-invert-a-shared-role-pair` below) was still needed, but not at the topology level; at the level of specific primitive values.
 
 ### swap-primitive-values-not-aliases-to-invert-a-shared-role-pair
 
@@ -366,8 +349,6 @@ Before the swap — read-only confirm that the primitive (or pair) is really exc
 
 **When it does NOT work:** if only PART of the affected slots should swap while another part shouldn't (e.g. `fill/bg/tertiary` takes no part in the pair and must stay as is) — the value swap of the two primitives leaves them alone only if they really reference a third, independent primitive. Check that BEFORE the swap: harvest which slots alias exactly this pair of primitives and which — something else, despite the visual similarity of the role.
 
-Verified on a component library file — Brand D Light `fill/bg/primary` / `fill/bg/secondary`. A full audit of the products' codebases found 13 places depending on the page being lighter than the card (the only light mode of five brands where it was the reverse; the defect inherited literally from the source patch). Swapping the values the new brand primitives ↔ the new brand primitives restored the monotonic order at once on all affected slots, including an unforeseen positive side effect: `fill/neutral-primary-inverse` (Dark) became pure white instead of a muted grey — which by itself matched the file's already adopted "true white for the neutral-primary family" convention.
-
 ### hsl-lightness-disagrees-with-wcag-luminance-at-nontrivial-saturation
 
 **Principle:** When interpolating/rebuilding a colour ladder (a constant-H/S HSL interpolation between anchors), a check "lightness monotonicity preserved" via HSL lightness (`(max(r,g,b)+min(r,g,b))/2`) can give a false positive — the real (WCAG-weighted) luminance can go in the REVERSE order if one of the steps is noticeably more saturated than its neighbours. WCAG relative luminance (`0.2126R+0.7152G+0.0722B` on gamma-corrected channels) weights the G channel disproportionately (0.7152) — a colour with G raised relative to R/B (typical for "green" accents/wash surfaces) can have a HIGHER real brightness at a NUMERICALLY lower HSL-L than a less saturated neighbour with a higher HSL-L. This isn't a hypothetical edge case — the discrepancy is large enough to literally flip the "primary > secondary > tertiary" order that the HSL-L check reports as "OK" at that moment.
@@ -375,8 +356,6 @@ Verified on a component library file — Brand D Light `fill/bg/primary` / `fill
 **Symptom:** a monotonicity check script (written via HSL-L as a cheaper/more intuitive proxy for real brightness) returns `monotonic: true`, but `fill/bg/tertiary` is visually/really lighter than `fill/bg/secondary` — the same defect class as a first-pass monotonicity check for a new brand ladder, which must be done via WCAG luminance, but which is easy to accidentally bypass if, when writing a new ad hoc interpolation script, HSL-L is taken "for speed" without recalling the already documented formula.
 
 **Pattern:** for ANY ladder monotonicity check (not only "the first pass of a new brand" — the same risk in a point edit of one or two steps of an existing ladder) compute the order EXCLUSIVELY by WCAG relative luminance, never by bare HSL-L, even as a draft/intermediate check — if an intermediate HSL-L check says "OK", that's no guarantee; the final check must be via luminance on the live values just written to Figma (not on numbers pre-computed in the head). If an anchor colour is noticeably more saturated than the neighbouring ladder steps (check: the anchor's S / the neighbours' median S > ~3×) — treat that anchor as a potential source of such a discrepancy in advance, not after the fact.
-
-Verified on a component library file — Brand D Round 3 (ReferenceBrand alignment). `neutral/92` (Linen Mist, a hue-correct ReferenceBrand anchor, S≈65%) turned out lighter by WCAG luminance (0.869) than `neutral/98` (Fog, S≈11%, luminance 0.823), while the HSL-L of both steps was in the right order (90.0% < 91.2%) — the discrepancy was caught only by a repeat luminance check AFTER writing to Figma, not at the interpolation stage. Fixed by desaturating the Linen shade for this specific step (details in the notes on that edit) — the neighbour `accent/96`, using the same Linen Mist for another role (not in the primary/secondary/tertiary chain), needed no desaturation, because monotonicity isn't checked there at all.
 
 ### cornerradius-binding-lands-on-four-per-corner-fields
 **Principle:** `setBoundVariable('cornerRadius', v)` binds the **four per-corner fields** (topLeft/topRight/bottomLeft/bottomRight), NOT an aggregate — `node.boundVariables.cornerRadius` stays false. Bind and verify all four. Re-check the radius after creating wrappers (a wrapper set to 24 has read back as 72). Cover the binding edge cases in the first pass: mixed per-corner radii (corners that differ), values `>=100` and `>=144`, negative values, and sub-pixel (fractional) values — handle all of these up front; they're repeatedly missed.

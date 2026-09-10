@@ -14,7 +14,6 @@ const fonts = await figma.listAvailableFontsAsync();
 const has = fonts.some(f => f.fontName.family === 'Gilroy');
 if (!has) { /* author in Inter to spec, hand the restyle to the user — do NOT try loadFontAsync */ }
 ```
-Verified on a portfolio-slide file — a CTA button in a locally installed Gilroy: three `use_figma` calls went on probing `loadFontAsync` for Bold / Semi Bold after the family was already missing from `listAvailableFontsAsync`; one check would have settled it.
 
 ### settextstyleidasync-swaps-the-font-mid-call-load-both-fonts-first
 **Principle:** Loading fonts is still required even when you're binding a style, not loading one. `setTextStyleIdAsync` swaps the node's font to the style's font as part of applying it — any write to the node *after* that call (e.g. clearing `textDecoration`) then fails with `Cannot write to node with unloaded font "JetBrains Mono Medium"`, because the font the node now has was never loaded. Load **both** the node's current font and the style's target font, in that order, before the style-id write.
@@ -42,13 +41,11 @@ for (const seg of node.getStyledTextSegments(['fontName'])) {
 **Principle:** `node.fills` on a TEXT node with per-segment (per-character) styling returns the `figma.mixed` symbol, NOT an array — any bulk script checking `Array.isArray(node.fills)` before processing paint bindings (the standard pattern for a fills/strokes rebind) silently SKIPS such nodes entirely. Separately: `node.getStyledTextSegments(['boundVariables'])` does NOT return the per-segment colour binding in `segment.boundVariables.fills` — the real binding lives inside `segment.fills[i].boundVariables.color.id`, an ordinary Paint object; the `boundVariables` field on the segment itself concerns other typography properties (fontFamily etc.), not colour. Both facts together mean: a bulk variable rebind that doesn't handle mixed-style TEXT nodes by a separate path through `getStyledTextSegments(['fills',...])` leaves them entirely unchecked and unconverted — while the script reports 0 errors, because for it such nodes don't exist.
 **Symptom:** a mass rebind (even with a subsequent read-only check through the same `Array.isArray(node.fills)` pattern) shows 0 remote/unbound findings, but a specific word/digit inside a paragraph with inline emphasis (a brand, a bold accent, part of a card number) stays on the old library/token — found only visually (the word is invisible or of the wrong colour on the new background), not by a structural check.
 **Pattern:** a separate pass specifically over TEXT nodes: `const segs = node.getStyledTextSegments(['fills']); segs.map(s => s.fills[0]?.boundVariables?.color?.id)` — compare the segment signatures, find real differences/remote bindings, process each segment through `setBoundVariableForPaint` on its own paint. If the user asks to "split into layers" — record that case (moving the space at the split boundary) in your per-project notes file.
-Verified in a design-system file — 3 consecutive batch rebinds (162+147 nodes) reported 0 remote findings; the user's separate visual QA in the dark theme revealed an invisible word "Replace" inside a paragraph — a rescan with the RIGHT method on the same already-"clean" page found 9 such nodes, including sections already processed in earlier batches.
 
 ### hug-text-box-collapses-trailing-space-but-keeps-leading-space
 **Principle:** On a TEXT node with `textAutoResize: 'WIDTH_AND_HEIGHT'` (HUG on both axes), a space that ends up as the LAST character of the string isn't included in the measured box width (visually collapses to zero) — while a space as the FIRST character is preserved correctly. The asymmetry is confirmed empirically (not documented in the Plugin API): when splitting one TEXT node with inline emphasis into several neighbouring TEXT children inside a HORIZONTAL auto-layout with `itemSpacing: 0`, the space that used to sit BETWEEN two styles (usually as the last character of the piece BEFORE the emphasis) must be moved to the first character of the NEXT piece, not left as the previous one's tail.
 **Symptom:** after the split the text at the boundary of two new TEXT nodes visually sticks together ("use the function«Replace»" instead of "...the function «Replace»"), although both pieces contain the needed space in `.characters` and `row.children` are placed with the right `x`/`width` per the API — the space-containing part of the piece just doesn't render at the expected width.
 **Pattern:** before assembling the split, walk the piece boundaries and move the space to the leading position of the next piece. A separate case — a piece consisting ENTIRELY of space(s) (e.g. the middle fragment of `"12,000" + " /" + " " + "50,000"`) — such a piece risks collapsing on BOTH sides; the right move is to delete it as a separate node and glue its text as leading characters onto the next piece in order.
-Verified in a design-system file — 6 of 9 splits were affected (all cases where the boundary fell on a trailing-side space); recorded via a pixel-level zoom screenshot (`get_screenshot` on the specific row), not visible on the full-page preview.
 
 ### findone-text-may-hit-hidden-sibling-not-visible-content
 **Principle:** A component with several TEXT children (e.g. `Title`+`Subtitle` inside one `Hint`/card-like instance) may keep ONE of them `visible=false` as an unused slot — `instance.findOne(n => n.type === 'TEXT')` returns the first in traversal order, which doesn't guarantee a visible / actually displayed node. A text mutation on the hidden node passes without error (the API doesn't check `visible`), nothing changes visually, and the real bug (the old text) stays on screen.
@@ -58,7 +55,6 @@ Verified in a design-system file — 6 of 9 splits were affected (all cases wher
 const realText = instance.findAll(n => n.type === 'TEXT' && n.visible === true)[0];
 // NOT instance.findOne(n => n.type === 'TEXT') — may return the hidden Title instead of the visible Subtitle
 ```
-Verified on a production admin dashboard — a `Hint` component (used in all confirm modals of the "08 List Page B" page): the hidden `Title` (visible=false) came first in traversal before the visible `Subtitle`.
 
 ### letterspacing-detaches-textstyle
 **Principle:** Setting ANY typographic property (`letterSpacing`, `fontSize`, `textCase`, probably others too: `fontName`, `lineHeight`) AFTER assigning `textStyleId` detaches the text style — `textStyleId` silently becomes `''`. The rule isn't specific to `letterSpacing` — it's a general effect: any raw typography override after binding resets the binding.
@@ -75,7 +71,6 @@ label.characters = 'Account';
 label.textStyleId = 'S:abc...'; // nothing typographic after this line
 label.fills = [boundColorPaint]; // OK — fills don't detach the style
 ```
-Verified on a mobile app file in a repeat round of profile-page redesign fixes — a systematic bug on ~9 text nodes (hero label/value, 3 group labels, an account row label, 2 settings row labels, the logout button label): everywhere the order was `textStyleId` → `fontSize`/`textCase`; the style silently dropped on each. A full pass with the corrected order restored the binding on all nodes at once (0 unbound of 46 text nodes after the fix).
 
 ### texttruncation-ending-enum
 **Principle:** `textTruncation` accepts `'ENDING'`, not `'ENDING_ELLIPSIS'`; for single-line truncation combine with a fixed width (resize) and `textAutoResize = 'TRUNCATE'`.
@@ -140,7 +135,6 @@ const label = linkCell.findOne(n => n.name === 'Label');
 label.textAlignHorizontal; // 'CENTER' — this is the source of the "drift", not cell.width
 label.textAlignHorizontal = 'LEFT';
 ```
-Verified on a production admin dashboard (a partners section) — an entity link cell (`type=Link` table cell) inside a detail tab.
 
 ### bulk-dictionary-text-localization-single-atomic-pass
 **Principle:** A mass translation/replacement of text scattered over a page (tens to hundreds of TEXT nodes, including ones nested in INSTANCEs) is done efficiently with ONE atomic `use_figma` script: a recursive tree walk (descending into INSTANCE children — `node.children` works on instances too) → on each TEXT node a lookup of `node.characters` in a JS source→target dictionary → on a match, `getStyledTextSegments(['fontName'])` + `loadFontAsync` per segment → `node.characters = target`. Script atomicity means: even 200+ mutations in one call — either all applied, or (on an error somewhere in the middle) NONE; nothing to roll back.
@@ -194,7 +188,6 @@ for (const c of page.children) await apply(c);
 // what remains must be ONLY the expected data (slugs/enum/dates), not forgotten UI text.
 ```
 **Why fontCache matters:** without the cache `loadFontAsync` is called once per EVERY mutated node (200+ calls instead of a handful of unique `family|style` pairs) — not critical for correctness, but noticeable for throughput with a large dictionary.
-Verified on a production admin dashboard — the "09 List Page A" page (2 SECTIONs + 3 top-level detail frames), 250 text mutations in one call, 0 errors, an 81-entry dictionary checked against the project's localisation corpus and a live staging.
 
 ### multiple-same-name-visible-text-siblings-findone-leaves-second-as-default-placeholder
 _An adjacent entry — the reverse of `findone-text-may-hit-hidden-sibling-not-visible-content` above: there findOne hits a HIDDEN node first (the mutation isn't visible); here — a VISIBLE node of two identically named ones, and the second visible one stays with the default placeholder._
@@ -207,7 +200,6 @@ const textNodes = textFrame.children.filter(c => c.type === 'TEXT'); // both vis
 // textNodes[0] was already overridden to the needed text earlier in the script
 for (let i = 1; i < textNodes.length; i++) textNodes[i].visible = false; // hide the default placeholder
 ```
-Verified on a component library file (a component-states reference file, an imported the menu item, an "Unlink" menu item): under the overridden "Unlink" text an unrequested default "Label" rendered — the second `Field label` node of a component originally designed for name+address.
 
 ### textautoresize-height-wraps-instead-of-truncating-fix-via-truncate-mode-override
 **Principle:** A TEXT node inside an instance with `layoutSizingHorizontal='FILL'` and `textAutoResize='HEIGHT'` (the typical configuration for "elastic" text in an auto-layout DS component) does NOT truncate long content with an ellipsis when the parent narrows — it WRAPS to 2+ lines, inflating the row's height. The master component may have `textTruncation: 'DISABLED'` by default, even when the rest of the design (single-line lists, a fixed row height) is clearly built for one line. This is NOT a bug, just a default that must be overridden at instance level.
@@ -221,7 +213,6 @@ usernameText.textAutoResize = 'TRUNCATE';
 usernameText.textTruncation = 'ENDING';
 usernameText.layoutSizingHorizontal = 'FILL'; // the width is elastic again; the height stayed pinned
 ```
-Verified on a component library file (row-redesign planning) — the the entity-trigger row component username text (`textTruncation` default `DISABLED`) wrapped a long username to 2 lines when the instance was narrowed to 216 px; after the override — a correct single-line `«@example_user_123…»` with an ellipsis; the width still elastic on subsequent parent resizes.
 
 ### remote-ds-text-styles-mode-responsive-apply-plain-token-not-desktop-mobile-variants
 **Principle:** A design system's remote text styles (e.g. a `Design System`-style library) are often **mode-responsive** — their `fontSize` is bound to a float variable with modes (Desktop/Mobile). One "plain" style token (e.g. `text-3xl`) resolves to a DIFFERENT size by the frame's active mode: the same `setTextStyleIdAsync(style.id)` on a desktop frame → 32 px, on a mobile frame → 24 px. Separate `Desktop/text-3xl` / `Mobile/text-3xl` variants exist too (non-responsive pins), but if the frames already carry the right mode (e.g. cloned from onboarding) — the plain token gives the desktop↔mobile pair automatically; no need to duplicate.
@@ -234,7 +225,6 @@ Verified on a component library file (row-redesign planning) — the the entity-
 const style = await figma.importStyleByKeyAsync('style-key-placeholder'); // text-3xl (internal DS, mode-responsive)
 await titleNode.setTextStyleIdAsync(style.id); // desktop frame → 32, mobile frame → 24 (by the frame's mode)
 ```
-Verified on a mobile onboarding file (a verification-flow wrap, one of its steps): `text-3xl`/`text-xl`/`text-base-*`/`text-sm-*`/`text-xs-normal` from an internal design system applied via `setTextStyleIdAsync` to 18 frames; the plain `text-3xl` gave 32 on desktop / 24 on mobile — the modes were inherited from the cloned onboarding shell; separate Desktop/Mobile styles weren't needed.
 
 ### master-textstyleid-fix-cascades-to-live-uninstanced-nested-copies-detached-need-manual-fix
 **Principle:** Applying `setTextStyleIdAsync` to a TEXT node of a master component (or a CS variant) automatically propagates to all nested live INSTANCE copies of that node across the file, IF the copy has no local override of its own on that property (the same mechanism as structural edits — see `component-cascade-instance-vs-manual-clone-inheritance-divergence` in `instances.md`, but here specifically about textStyleId/font). Copies that were `detachInstance`-ed (turned into independent FRAMEs) do NOT receive the cascade — a separate explicit fix is needed on each.
@@ -245,7 +235,6 @@ Verified on a mobile onboarding file (a verification-flow wrap, one of its steps
 const nestedCopy = await figma.getNodeByIdAsync('I<parentInstanceId>;<masterTextNodeId>');
 return { styleId: nestedCopy.textStyleId }; // must match the master's new style without extra actions
 ```
-Verified on a component library file, a file-wide text-style audit (61 pages) — confirmed 3 times in a row on different components: the filter-summary component (the dark instance without an override picked up the master fix automatically; the light instance had a manual override → had to be fixed separately), the metric row component (10 nested copies in Histogram/RangePanel/SearchSettingsSheet light+dark — all live INSTANCEs, all picked up the fix of the master's 4 CS variants without extra actions), the entity picker (the same — the entity-picker accordion + both SearchSettingsSheet instances picked up the master CS fix). A contrasting case in the same audit: the the accordion card headers inside SearchSettingsSheet had been `detachInstance`-ed while assembling the composition (recorded in the per-project notes file, SearchSettingsSheet build) — the master fix did NOT propagate; all 8 copies had to be fixed one by one.
 
 ### fill-text-width-is-not-natural-width-measure-by-toggling-autoresize
 **Principle:** On a TEXT node stretched by its parent (`textAutoResize='HEIGHT'`, width = the cell's width minus paddings), `node.width` shows the IMPOSED width, not the string's natural width. So the question "does the text fit" isn't settled by `t.width` vs `cell.width`: it always "fits". A real wrap is visible only indirectly — by the height (`t.height` is a multiple of the line height) or on a screenshot.
@@ -264,7 +253,6 @@ async function natural(t) {
 }
 // column i's need = max(natural(header), natural(each cell), width(Badge instances)) + PAD
 ```
-Verified on a production admin dashboard, pages `10 Section X`/`11 Section Y`: two iterations of picking widths "with a margin" didn't converge (the wraps remained); measuring natural widths gave an exact layout first time — a need total of 1179 against a budget of 1152 immediately showed that 27 px had to come off the actions column, not out of the text.
 
 ### capture-semibold-with-no-loaded-600-weight-means-browser-rendered-bold-not-medium
 **Principle:** An html-to-figma capture may assign a text style the name `SemiBold` (font-weight:600 in the page's computed styles) even when NO font-face / font config of the product has a loaded 600 weight (checked in code: Roboto in that stack loads only 300/400/500/700 — 600 is declared nowhere as a real file). That doesn't mean 600 is a capture typo: `font-weight:600` may really be requested in the component's CSS/classes (a legitimate design intent), but the browser, not finding the exact weight, matches it to the nearest LOADED one by the CSS Fonts Module Level 4 algorithm: for a target weight **>500** the search goes through the available weights **upward** (in this stack — to 700/Bold), not down to 500/Medium. Additionally, most fonts (including the classic static Roboto) have no real `SemiBold` face as a separate file at all — i.e. even if a designer picked "Roboto SemiBold" in Figma, no such master style exists; the name is an artefact of how the capture names the computed numeric weight.
@@ -274,7 +262,6 @@ Verified on a production admin dashboard, pages `10 Section X`/`11 Section Y`: t
 await figma.loadFontAsync({ family: 'Roboto', style: 'Bold' });
 node.fontName = { family: 'Roboto', style: 'Bold' }; // not 'Medium' — CSS Fonts L4 rounds >500 up, not down
 ```
-Verified on a subscription-paywall file — code archaeology confirmed: the React/legacy CSS load Roboto only at 300/400/500/700; meanwhile three real places in the code (`.benefits.heading`, an upgrade product-card heading, React onboarding) explicitly request `font-weight:600`. 15 text nodes across the control frame+the destination frame carried a captured `Roboto SemiBold` (headings/labels/prices); switched to `Roboto Bold`, visually confirmed by screenshot (the paywall label clearly bolder than the neighbouring filter value after the fix; visually identical in weight before).
 
 ### auto-lineheight-in-imports-means-not-captured-do-not-compute-a-value
 
@@ -291,7 +278,6 @@ for (const s of t.getStyledTextSegments(['fontName','fontSize','lineHeight'])) {
 // rollback of a wrong substitution: return AUTO where value ≈ fontSize * factor
 if (Math.abs(s.lineHeight.value - s.fontSize * 1.3) < 0.15) t.setRangeLineHeight(s.start, s.end, { unit:'AUTO' });
 ```
-Verified on a profile-screen-with-paywall file — while cleaning the desktop paywall 76 runs with `AUTO` got `fontSize × 1.3` (the factor was taken from a neighbouring mobile mockup where it really figured in the capture); a rollback by the same factor restored all 76; the two honest PERCENT conversions were kept.
 
 ### retext-clone-keeps-donors-fixed-width-with-textautoresize-none
 **Principle:** On a TEXT node with `textAutoResize: 'NONE'`, assigning new `.characters` does NOT recompute the box width — it stays what the donor had (relevant when cloning a similar row/card and replacing the text with a longer/shorter one). If the new text has a different length, it either wraps onto an extra line inside the old narrow box (visually breaking any fixed height of the parent container nearby), or stays with an excess empty tail of the box — `node.width` is reported after writing `.characters`, but it's the OLD box's width, not the new text's natural width.
@@ -304,7 +290,6 @@ titleNode.textAutoResize = 'NONE';
 titleNode.resize(naturalWidth, naturalHeight);
 ```
 Any neighbouring elements whose position was computed from the old text width (e.g. indicators/icons right after the heading) — recompute by the NEW measured width, not the old.
-Verified on a profile-screen-with-paywall file — a clone of a compare-table row (a 19-character tagline) for a new heading (a 28-character tagline): the box stayed 158 px (the donor's width); the new text wrapped to 2 lines and ran over the description below; fix — measuring the natural width (196 px) and resizing.
 
 ### maxlines-truncation-invisible-to-characters-reads
 **Principle:** Text truncation is a RENDER property (`textTruncation: 'ENDING'` + `maxLines: 1`), and `.characters` under it carries the string WHOLE. No structural walk (reading `characters`, comparing with a ledger/spec, a property diff) sees the truncation: the node honestly returns the full text, while the frame shows "Start of the lin…". So a check "the text in the frame equals the declared one" passes on a truncated heading.
@@ -318,7 +303,6 @@ const segs = t.getStyledTextSegments(['fontName']);
 for (const s of segs) await figma.loadFontAsync(s.fontName);
 t.textTruncation = 'DISABLED'; t.maxLines = null;
 ```
-Verified on a production admin dashboard, a "Create a preconfigured entity" form: a 33-character heading in a 342 px box drew as "Create a preconfigured en…", while `characters` returned the string whole and the surface check gave exit code 0. The render found it; not one checker rule reads truncation at all.
 
 ### custom-font-missing-unicode-symbol-glyph-fallback-to-system-font
 **Principle:** Custom UI fonts (not Inter/system) often don't cover the Unicode Miscellaneous Symbols block (e.g. U+2665 BLACK HEART SUIT `♥`) even when neighbouring blocks (Arrows, basic Latin) are fully covered — `figma.loadFontAsync` and writing `.characters` pass without error, but the glyph renders empty (not a missing-glyph box — literally nothing).
@@ -328,7 +312,6 @@ Verified on a production admin dashboard, a "Create a preconfigured entity" form
 await figma.loadFontAsync({ family: 'Inter', style: 'Black' });
 heartGlyphNode.fontName = { family: 'Inter', style: 'Black' }; // Onest Black has no U+2665 glyph
 ```
-Verified on an upsell modal on a payment screen — an upsell interrupt-modal icon tile (the ↗ arrow and "x2" in Onest Black rendered fine; the ♥ heart — an empty plate; fix — Inter Black for this node only).
 
 ### measure-text-width-via-hug-toggle-fixed-restore-unsafe
 **Principle:** To measure the real rendered width of a TEXT node whose `layoutSizingHorizontal` isn't `HUG` (i.e. `FILL` or `FIXED`), you can temporarily switch to `'HUG'`, read `.width`, and switch back. Switching back to `'FILL'` is safe (recomputed relative to the parent automatically). Switching back to `'FIXED'` is NOT safe: Figma pins the CURRENT (just measured, hug-derived) width as the new FIXED value, without restoring the original explicit number.
@@ -348,4 +331,3 @@ if (node.layoutSizingHorizontal === 'FIXED') {
   node.layoutSizingHorizontal = 'FILL';
 }
 ```
-Verified on a production admin dashboard — measuring the width of a Row 12 label (`layoutSizingHorizontal: 'FIXED'` at 240 px) via a HUG toggle irreversibly sank it to 190 px (the text's real hug width); labels with `FILL` sizing in the same batch of measurements restored correctly without extra actions.

@@ -17,7 +17,6 @@ actionsGroup.setProperties({ Actions: 'Double' }); // now 2 ready button slots, 
 const buttons = actionsGroup.children.filter(c => c.name === 'button');
 buttons[1].setProperties({ Style: 'Fill', Size: 'XS', Type: 'Primary', State: 'Default' }); // configure the new slot
 ```
-Verified on a production admin dashboard (one of the sections) — the actions group inside the page-header component, adding a separate "Edit" button next to "Actions" without a single detach.
 
 ### fresh-createinstance-boolean-props-default-to-master-not-to-known-good-usage
 **Principle:** `variantComponent.createInstance` yields an instance with its boolean component properties (`Show X`, `Show Y`) in the master component's DEFAULT state — if somewhere in the file a "canonical" instance of the same variant combination already exists with those properties overridden (e.g. `Show Title=false` to show only the secondary text slot), a fresh `createInstance` doesn't inherit that and renders both text slots visible (or another default combination), even if the component is in practice meant to have one active text slot.
@@ -29,7 +28,6 @@ const refProps = Object.fromEntries(Object.entries(reference.componentProperties
 const fresh = variantComponent.createInstance();
 fresh.setProperties({ 'Show Title#1371:9': refProps['Show Title#1371:9'] }); // don't trust the master's default
 ```
-Verified on a production admin dashboard — a `Hint` component: fresh `createInstance` calls rendered both `Title` and `Subtitle`, while the reference instances in the source section had `Show Title#1371:9=false`.
 
 ### multi-axis-setproperties-can-silently-hide-instance
 **Principle:** `instance.setProperties({...})` with SEVERAL variant axes in one call (e.g. `{State: 'Disabled', 'Show helper in title': 'Yes'}`) can, as a side effect, set `instance.visible = false` and `instance.opacity = <0.6ish>` on the instance itself (not on a child node) — even though neither `visible` nor `opacity` was mentioned in the call. A NEIGHBOURING element may be affected too (e.g. a divider right after the instance in the same auto-layout), also without explicitly taking part in the call.
@@ -303,7 +301,6 @@ const comp3 = figma.createComponentFromNode(c3);
 const comp4 = figma.createComponentFromNode(c4);
 const set = figma.combineAsVariants([comp1, comp2, comp3, comp4], page);
 ```
-Verified on a production admin dashboard (`.Accordion — list bucket`) — 4 variants assembled via createAutoLayout; the first combineAsVariants failed; conversion via createComponentFromNode solved it without loss of content/structure.
 
 ### decorative-instance-siblings-break-type-only-filter
 **Principle:** A list container (e.g. the action menu with the menu-item component items) may contain decorative INSTANCE siblings (a pointer cursor for a screenshot, a hover illustration, etc.) that pass the `n.type === 'INSTANCE'` filter but aren't logical list elements — accessing their nested structure (`item.findOne(n => n.name === 'item-action')`) returns `null` and crashes the script on an attempt to read `componentProperties`. Filter by type **AND** by the specific component name (`n.type === 'INSTANCE' && n.name === 'item-action+divider'`), not by type alone.
@@ -317,7 +314,6 @@ const items = menu.children.filter(n => n.type === 'INSTANCE');
 // ✅ RIGHT — filter by type AND by name
 const items = menu.children.filter(n => n.type === 'INSTANCE' && n.name === 'item-action+divider');
 ```
-Verified on a production admin dashboard (dropdown disabled-all illustrations) — the action menu held a a decorative cursor instance INSTANCE mixed with 3 the menu-item component.
 
 ### accessing-property-on-removed-node-throws
 **Principle:** After `node.remove` the node ceases to exist in the document — any subsequent access to its properties (`.parent`, `.x`, `.children`, etc.) in the same script throws `get_parent: The node with id "..." does not exist` (or the analogous error for another property), rather than returning `null`/`undefined`. If after a conditional `remove` you need to return a flag/data about what was removed — save the needed value (id, name, a factory flag) into a variable BEFORE calling `remove`; don't read it off the already-removed node in the `return`.
@@ -339,7 +335,6 @@ if (wrapperParent.children.length === 0) {
 }
 return { wrapperRemoved }; // just a variable, not a repeat access to the node
 ```
-Verified on a production admin dashboard (an internal variant-cleanup task) — an atomic rollback of the whole script because of this error; the task was rerun with the corrected logic.
 
 ### create-component-from-node-changes-own-id-preserves-children-ids
 **Principle:** `figma.createComponentFromNode(frame)` does NOT preserve the node's own id (despite the docs' wording "preserving all of its properties and children") — the top-level id changes to a new one (checked empirically: `idPreserved: false`), but the ids of ALL child nodes stay unchanged.
@@ -371,7 +366,6 @@ if (btn.componentProperties['State'].value !== 'Default') {
 }
 ```
 **Adjacent rule (don't confuse):** `variant-switch-retains-matching-property-overrides` (the core SKILL.md) — that one is about keeping a FOREIGN override value of a matching property from the previous variant; this one is about a silent RESET to the set's default on an unspecified axis. The symptom is similar (an unexpected state after the swap); the cause is the opposite.
-Verified on a production admin dashboard, one of the sections (a nested section with a form, a delete-confirm modal — the "Delete" button after `Type: 'Negative'` got `State: 'Disabled'` instead of `'Default'`).
 
 ### combineasvariants-auto-positions-siblings-side-by-side
 **Principle:** `figma.combineAsVariants([comp1, comp2,...], parent)` automatically lays the passed COMPONENT nodes out side by side along x (in array order, without overlap) inside the resulting COMPONENT_SET — it doesn't leave them at their original/overlapping coordinates. Hence a consequence for `component-set-no-autoresize` (above): the set's `resize` must be computed from the actual bounding box of ALL children (`Math.max(...children.map(v => v.x + v.width))`), not from the width of one (e.g. the first/original) variant — otherwise the set's frame clips all variants but the first on render, although structurally (`get_metadata`) everything is correct.
@@ -384,7 +378,6 @@ const maxRight = Math.max(...set.children.map(v => v.x + v.width));
 const maxBottom = Math.max(...set.children.map(v => v.y + v.height));
 set.resize(maxRight, maxBottom);
 ```
-Verified on an internal popover-assembly task — an Action Row COMPONENT_SET (`Session=Parent|Child`): the original `resize(338, maxHeight)` clipped `Session=Child` (x=378) entirely; the screenshot showed only `Session=Parent`.
 
 ### component-set-none-layout-appendchild-stale-bounds-1x1-screenshot
 **Principle:** `component-set-no-autoresize` (above) applies not only after `combineAsVariants` but also to a plain `cs.appendChild(newVariant)` on an existing `COMPONENT_SET` with `layoutMode='NONE'` — if the new variant is positioned (x/y) outside the current `cs.width`/`cs.height`, the CS doesn't recompute its bounds by itself. The symptom is far more serious than simple visual clipping: `get_screenshot` on the NEW child node ITSELF (not the CS) returns a **degenerate 1×1 px PNG without a single error**, while `get_metadata` / a direct property read of the node (`visible:true`, correct `x/y/width/height`, a correct children structure) looks perfectly normal — the bug can't be caught by a structural read, only by a screenshot.
@@ -395,7 +388,6 @@ const maxRight = Math.max(...cs.children.map(v => v.x + v.width));
 const maxBottom = Math.max(...cs.children.map(v => v.y + v.height));
 cs.resizeWithoutConstraints(maxRight + pad, maxBottom + pad);
 ```
-Verified in a design-system file — a the brand-logo set CS (, `layoutMode='NONE'`), adding `Brand=neutral` × 4 sizes below the existing content (`y = cs.height + 60`). The first screenshot after `appendChild` (without resize) → 1×1; after `resizeWithoutConstraints` the same node → a correct PNG.
 
 ### exposedinstance-does-not-surface-nested-props-to-parent-componentproperties
 **Principle:** `nestedInstance.isExposedInstance = true` (the documented official API for "Nested instances" — the component properties of a nested instance are "surfaced" to the containing instance's level) **does not make** the prop available via `parentInstance.componentProperties`/`setProperties` on a freshly created instance of the parent — tested empirically: after setting the flag on a nested instance inside a master component, `parentComponent.componentPropertyDefinitions` doesn't change, and `freshInstance.componentProperties` contains the nested instance's prop neither under its original key nor under any new one.
@@ -411,7 +403,6 @@ nestedClearButtonInstance.isExposedInstance = true;
 const clearInst = filterFooterInstance.findOne(n => n.name === 'Clear' && n.type === 'INSTANCE');
 clearInst.setProperties({ 'Label#4074:0': 'Cancel' }); // the nested Button instance's own native key
 ```
-Verified in a design-system file — the filter-footer component ( → CS), an attempt to surface the `Clear` button's `Label#4074:0` as a top-level `Clear Label` prop of the parent.
 
 ### componenttoframe-manual-conversion-drops-visual-properties-not-just-fills
 **Principle:** The Plugin API has no direct way to turn a `COMPONENT` into an ordinary `FRAME` — the working pattern: create a new `figma.createFrame`, copy the needed properties, move the children (`appendChild` in a loop), delete the old `COMPONENT`. Copying "the needed properties" is intuitively limited to the auto-layout config (`layoutMode` / sizing modes / padding / spacing) and `fills` — but `cornerRadius` / `topLeftRadius` & co / `effects` (shadows) / `strokes` / `clipsContent` stay on the OLD node and are **silently lost** unless copied explicitly: the new `FRAME` is created with defaults (`cornerRadius:0`, `effects:[]`); no warning or error occurs.
@@ -429,7 +420,6 @@ frame.effects = JSON.parse(JSON.stringify(reference.effects)); // boundVariables
 frame.strokes = JSON.parse(JSON.stringify(reference.strokes));
 frame.clipsContent = reference.clipsContent;
 ```
-Verified on a production admin dashboard (de-componentising row-level row actions — Assign / Move / Unlink) — 9 nodes (6 converted COMPONENT→FRAME base/busy × 3 actions + 3 "modal column" wrappers from the previous session) lost `cornerRadius:24` + `DROP_SHADOW`; the reference for comparison — the untouched (the bulk pattern). The toast-wrapper "success" frames were NOT visually affected despite the same conversion — they have `fills:[]` and no "modal" silhouette of their own; shadow/radius weren't needed there before the conversion either.
 
 ### variant-switch-can-silently-replace-text-content-not-just-styling
 **Principle:** Switching a COMPONENT_SET instance's variant via `setProperties` can replace a TEXT layer's content with the NEW variant's default, even if the real application code uses this variant axis exclusively for STYLING (a class/colour), not for content — if the master variant being switched to originally had different demo text hard-coded (e.g. a placeholder word instead of a real value) on the same named TEXT layer.
@@ -445,7 +435,6 @@ if (labelAfter !== labelBefore) {
   label.characters = labelBefore; // restore the real data
 }
 ```
-Verified in a design-system file, a MetricBarRow `Kind=in`→`Kind=best` switch on bin `"12–34"` — Count (`N`) correctly survived the switch (identical in both variants) while Label didn't; an asymmetry between two TEXT layers of the same node, not a general "all text is lost".
 
 ### local-unpublished-component-importbykeyasync-not-found-despite-matching-key
 **Principle:** `figma.importComponentByKeyAsync(key)` / `importComponentSetByKeyAsync(key)` resolve ONLY components published to a team library — on a component living locally in the current file (never published as a library one) they throw `Error: Component with key "..." not found`, even if the passed `key` literally matches the live node's `node.key` (Figma assigns a `key` to every component regardless of publication, but the import-by-key method ignores that fact). For local components the right access is a direct `figma.getNodeByIdAsync(componentId)` (the id, not the key) or `instance.getMainComponentAsync` from an existing instance.
@@ -459,7 +448,6 @@ const chipComp = await figma.importComponentByKeyAsync('component-key-placeholde
 const chipComp = await figma.getNodeByIdAsync('116:790');
 // or: (await existingChipInstance.getMainComponentAsync()).key === 'component-key-placeholder' // confirms the match
 ```
-Verified in a product file (a search feature, an early self-check run) — the chip-label slot and `_SummaryRow` are both local to that same file; both gave "not found" via import-by-key with a fully matching `key` on the direct node.
 
 ### variant-switch-carries-over-the-whole-state-of-the-previous-first-child
 
@@ -479,7 +467,6 @@ vec.strokes = st;
 ```
 
 **Adjacent — the reason the switch was made in the first place:** a hidden (`visible:false`) child in a variant that declares N buttons **breaks the neighbour's rendering**. The layout reserves the hidden one's slot (the hidden one's width + `itemSpacing`), and draws the visible button **at the hidden one's dimensions** — on screen the button is cut off at the right edge with a flat cut and the label is truncated. Property reads meanwhile show correct values (`width: 162`, label `106`, `textTruncation: DISABLED`), i.e. the defect exists only in the raster. Diagnostic sign: the width measured on the render equals the width of the **hidden** child, and the visible one's offset equals `hidden width + itemSpacing`. Cured not by an override but by switching the group to the variant with the right number of buttons.
-Verified on a production admin dashboard, the actions group on two similar screens: a 68.5 pt render at a 162 node; an offset of 81 = 69 + 12.
 
 ### importcomponentsetbykeyasync-required-for-set-level-key
 **Principle:** `search_design_system` for assets with `assetType: "component_set"` returns the `componentKey` of the SET itself — that key doesn't resolve via `figma.importComponentByKeyAsync` (which expects the key of a specific variant component); a separate `figma.importComponentSetByKeyAsync(key)` is needed.
@@ -509,7 +496,6 @@ const inputMaster = await figma.getNodeByIdAsync(knownGoodInst.mainComponent.id)
 const inst2 = inputMaster.createInstance();
 inst2.setProperties({ 'Text in field#3533:0': '...' }); // works
 ```
-Verified in a design-system file — a key read from a finished `Input` instance on one of the forms, on a repeat `importComponentSetByKeyAsync` in a NEW call returned a set with 4 properties (`Show text`, `State`, `Bg`, `label`) without `Text in field` — while a direct repeat read from THE SAME live instance showed the expected 4 properties WITH `Text in field` and without the `label` axis. Fix — resolve the master via `getNodeByIdAsync` on the instance's own id, not through the key.
 
 ### componentpropertydefinitions-throws-on-variant-component-use-parent-set
 **Principle:** `variantComponent.componentPropertyDefinitions` throws if called on a SPECIFIC variant component (a child inside a COMPONENT_SET) — definitions are read only from the COMPONENT_SET itself (the parent) or from a non-variant COMPONENT.
@@ -537,7 +523,6 @@ badge.setProperties({ 'Text#125:3': 'Enabled', Type: 'Positive' });
 const textBtn = linkCell.findOne(n => n.type === 'INSTANCE' && n.name === 'Text button');
 textBtn.setProperties({ 'Text#147:1': 'f2940de4-…' });
 ```
-Verified on a production admin dashboard, a `table cell` table on an operator card: the script filled `Title#256:0` on all 5 rows of three tables without a single error — the render afterwards showed `✳ Label ✳` on all `type=Link` cells (ID / field A / field B). A separate `findAll` inside the variant revealed a nested the text-button component with `Text#147:1`; after a pointwise fix of the same set of cells (`Text#147:1` instead of `Title#256:0`) the render immediately showed the passed values. The `Status`/`Progress` variants of the same mega-component suffer the identical pattern (the status badge / `Text#125:3`, the labelled progress bar / `Amount#281:3`); found and fixed with the same technique in the same session.
 
 ### api-created-frames-block-component-property-references
 **Principle:** `componentPropertyReferences` can't be set on frames created via the API (`createFrame`/`createAutoLayout`) — the attempt throws "Can only set component property references on symbol sublayer".
@@ -548,7 +533,6 @@ _(moved from the core SKILL.md — it was nested inside an unrelated rule about 
 **Principle:** `componentPropertyReferences` supports binding only for `visible` / `characters` / instance-swap — effects like a font swap, a transparent background, opacity are NOT bindable through this mechanism, even if a boolean component property was created for them.
 **Symptom:** a boolean-toggled effect is needed (e.g. "Mono" / "Grouped" / "Apply Disabled" — a font change, a transparent background), but it can't be bound via `componentPropertyReferences` directly.
 **Pattern:** implement such effects as a VARIANT axis (`false`/`true` as variant values), not as a native BOOLEAN component property with a direct `componentPropertyReferences` binding.
-Verified in a design-system file, assembling a settings-sheet component — `Mono` / `Grouped` / `Apply Disabled` were implemented as a VARIANT axis precisely for this reason.
 
 ### deleted-variant-lives-on-as-parentless-master-while-any-instance-points-at-it
 **Principle:** Deleting a variant from a COMPONENT_SET doesn't destroy the master while at least one instance points at it — the node stays alive but **parentless**: `getMainComponentAsync` returns a valid COMPONENT, `m.remote === false`, while walking `m.parent` immediately gives `null`, and it's on no page. Its name meanwhile flattens (`control/Input/Loading` instead of `Loading` inside the set), so in logs and dumps it looks like a separate component, not a deleted variant.
@@ -560,7 +544,6 @@ const m = await inst.getMainComponentAsync();
 let root = m; while (root.parent) root = root.parent;
 const phantom = root.type !== 'DOCUMENT';   // the master is deleted; only this instance holds it
 ```
-Confirmed on a real file: after deleting `State=Focused` variants from five sets, two spreads kept showing `control/Segment/Focused` and `control/Filter field/Focused` cells; a page search didn't find these components, a `zero-instance` audit by pages didn't see them either — they were found only by walking the showcase instances with a check of the master's parent.
 
 ### deleting-a-component-property-resets-every-instance-override
 **Principle:** Deleting a component property resets every instance's override to the component default. Removing 26 TEXT and BOOLEAN properties across three components rewrote 21 instances: a mandatory notice started reading "Unanswered letters", a per-day chart tooltip started showing per-pair figures, hidden rows and switched-off swatches became visible again. The override was *stored as the property value*, so deleting the property deleted the value with it.

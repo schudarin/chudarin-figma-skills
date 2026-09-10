@@ -132,7 +132,6 @@ for (const id of ids) {
   boxes.push({ id, x: ax, y: ay, right: ax + n.width, bottom: ay + n.height, parentId: n.parent.id, parentType: n.parent.type });
 }
 ```
-Confirmed on a real product file: several visually "parallel" case sections turned out to be nested in each other (one lay entirely inside its neighbour instead of beside it on the page); the raw `.x`/`.y` comparison first missed a real collision between nested sections, then "found" non-existent ones between unrelated sections — recomputing every bbox through `absoluteTransform` with one method gave the true picture.
 
 ### findone-object-identity-indexof
 **Principle:** `findOne` / `findAll` return fresh node wrappers on every traversal — `indexOf` and any `===` comparison of node objects against `parent.children` silently yield `-1` / `false` even for a real direct child; compare by `.id` only: `parent.children.findIndex(c => c.id === node.id)`.
@@ -188,9 +187,6 @@ frame.setExplicitVariableModeForCollection(primitiveColl, modeId);   // ①
 frame.setExplicitVariableModeForCollection(semanticColl, modeId2);   // ② — separate call, separate collection
 const resolved = semanticVar.resolveForConsumer(frame);              // honours BOTH pins
 ```
-Confirmed on a throwaway prototype (2×2-mode setup): pinning Semantic=Brand-A + Primitives=Brand-B (deliberately out of sync) gave Brand-B's colour, not Brand-A's — resolution is entirely determined by the target collection's pin; pinning Semantic=Brand-B WITHOUT a primitives pin gave the primitives' default mode despite Semantic=Brand-B — confirmed both by script (`resolveForConsumer`) and by render, which agree.
-
-Also confirmed on a real migration: the base palette was moved to several modes for real, and repointing semantic roles at it reproduced exactly the predicted case — right after the repoint (before adding the base-collection pin on demo frames) every frame except the collection's default mode showed ONE and the same (foreign) colour instead of its own. After adding the second pin (`frame.setExplicitVariableModeForCollection(...)`) on each demo frame the render returned to the right values — confirmed by `resolveForConsumer` over all roles × modes (byte-identical to the source values) and by screenshots. **Practical consequence for any future audit/export that walks the upper collection's roles once they've migrated onto a multi-mode lower one:** don't read `valuesByMode` directly and don't map the upper collection's mode name onto the same-named lower mode by assumption — resolve through `variable.resolveForConsumer(node)` where `node` is a correctly pinned demo node carrying both pins.
 
 ### addmode-copies-values-from-last-existing-mode-not-default-mode
 **Principle:** `variableCollection.addMode(name)` initialises the new mode's values as a copy of the **last mode in the current `.modes` list** (whatever was physically last BEFORE the `addMode` call), not of `collection.defaultModeId` — even when the default mode is not the last one. Calling `addMode` twice in one script (say, add a light mode, then a dark one) copies the FIRST new mode from the collection's previous last mode, not from the default — the intuitive "new mode = copy of default" does not hold.
@@ -207,7 +203,6 @@ for (const id of collection.variableIds) {
   if (donorVal !== undefined) v.setValueForMode(newMode, donorVal);
 }
 ```
-Confirmed in practice: two new modes (light and dark) created in a pair of linked collections. For the dark mode the data was copied explicitly from the existing dark one (correct, as planned). For the light one the copy was deemed unnecessary ("it inherits the existing light default anyway") — result: both new modes physically carried the values of the last mode that existed before the `addMode` call (the dark one), and the new light mode rendered a dark page. Found by checking through `resolveForConsumer`, not by screenshot — the first render after the fix still returned a stale cache; only `resolveForConsumer` + a fresh inline render in the same call confirmed the real discrepancy. Fixed by symmetric explicit copying of the source light mode into the new light mode across all affected variables of both collections.
 
 ## Routing: what to read when
 
@@ -258,7 +253,7 @@ If you accumulate facts about one specific Figma file (Set IDs / Page IDs of par
 The pack lives best with a single writer at any moment — if several people or agents append a new rule in parallel copies, versions diverge and duplicates have to be reconciled by hand. If several AI tools read the pack at once, agree that only one of them (or one person) writes to it; the others read and pass findings to that single writer — cheaper than untangling conflicting versions of the same fact later.
 
 1. **Classify:** a universal API principle → the topical `references/*.md`; a fact about one specific Figma file → its own `references/files/<file>.md` (not part of this shared pack); a process pattern not specific to the Figma API → your team's general rules, not here.
-2. **Append** the rule as a `### slug` section AT THE END of the topical file (format: Principle / Symptom / Pattern / code).
+2. **Append** the rule as a `### slug` section AT THE END of the topical file (format: Principle / Symptom / Pattern / code). No "verified on <file>" trailer: a reader outside your project can't use it, and it's where client names and node ids leak. If reproducibility matters, say so in one clause — "confirmed in several files" — nothing more.
 3. **New topic** → new file + a row in the routing table above, IN THE SAME COMMIT.
 4. **A rule that fired a third time in different contexts** → move the entry here, into "Universal principles", leaving a stub in the topic file in exactly this form: _Core: full text — `../SKILL.md`._ Exception: a rule describing a universal Plugin API principle not tied to a specific project (as opposed to a fact about one file) may be promoted on the first clear occurrence; the "three times in different contexts" threshold is mandatory only for patterns whose universality isn't obvious from one case.
 5. **Commit at once,** as a separate commit from the task in hand — it is easy to forget the pack change by committing only the task.

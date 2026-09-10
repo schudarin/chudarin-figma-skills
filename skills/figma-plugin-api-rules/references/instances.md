@@ -275,7 +275,6 @@ const newLabel = newTextButton.findOne(n => n.name === 'Label');
 newTextButton.layoutSizingHorizontal = 'FILL'; // also rolls back — check explicitly, not only visible
 newLabel.layoutSizingHorizontal = 'FILL';
 ```
-Verified on a production admin dashboard, one of the sections — a `table cell` swap `type=Text`→`type=Link` on two tabs (Tab A; Tab B, where long values of one of the text fields first exposed the sizing bug).
 
 ### nested-instance-boundaries-need-individual-detach
 **Principle:** `rootInstance.detachInstance` detaches only the root node itself (INSTANCE → FRAME) — nested sub-components (e.g. reusable `Breadcrumbs`/`Tabs`/a shared page-header component-like blocks inside a larger composite component) remain full INSTANCE nodes. `appendChild`/`remove` on descendants of such a nested instance still fail with `"Cannot move node. New parent is an instance or is inside of an instance"` / `"Removing this node is not allowed"`, even if the root parent is already detached.
@@ -288,7 +287,6 @@ if (textHeader.type === 'INSTANCE') textHeader = textHeader.detachInstance(); //
 const textLayout = textHeader.findOne(n => n.name === 'text layout');
 textLayout.appendChild(newNode); // fine now
 ```
-Verified on a production admin dashboard, one of the list sections — a the page-header component component (breadcrumb + title + tabs): both the nested the title sub-instance (a a shared page-header component analogue) and the nested `tabs` row (a `Tabs` analogue) needed a separate detach each — detaching only the root would have sufficed had the component's composition not reused nested shared DS components inside itself.
 
 ### instance-subtree-remove-blocked-toggle-visible-instead
 **Principle:** `.remove` on a node lying inside someone else's INSTANCE subtree (an override child inside e.g. a the modal header INSTANCE — not the root of a cloned composition but a nested widget) throws `Error: Removing this node is not allowed`, even if the top-level clone itself (the standard modal etc.) is an ordinary FRAME, not an INSTANCE. The same class of restriction as in `nested-instance-boundaries-need-individual-detach` (append/remove across nested instance boundaries), but here solved MORE SIMPLY — without a detach: if the goal is just to hide an irrelevant/unused sub-element of a composite DS component (not to embed new content in its place), `node.visible = false` is a normal, supported override that breaks nothing.
@@ -306,7 +304,6 @@ segControl.visible = false;
 const merchantSelect = contentLayout.children[1]; // content layout — a plain FRAME, not an instance
 merchantSelect.remove(); // fine
 ```
-Verified on a production admin dashboard, one of the list sections — while cleaning an irrelevant donor tail (`segmented control` + `badge group` inside the the modal header INSTANCE) on 3 cloned filters modals (Modal A / Modal B / Modal C).
 
 ### icon-box-style-variant-recolors-container-not-swapped-icon-glyph
 **Principle:** A wrapper component like the icon-box wrapper (a COMPONENT_SET with `Style`×`Size` axes and an the icon placeholder slot inside) colours with its `Style` variant (`Accent`/`Positive`/`Neutral`/…) only the BACKGROUND/plate of the box itself — the icon swapped inside (e.g. Lucide `check`/`copy`, imported via `importComponentByKeyAsync` + `swapComponent`) keeps ITS OWN default vector colour (usually black / `currentColor`-like), inheriting nothing from the parent's `Style`. Changing the box's `Style` is purely about the container, not the content.
@@ -321,7 +318,6 @@ for (const v of vectors) { // a mandatory separate step — easy to forget; the 
   if (v.fills?.length) v.fills = [figma.variables.setBoundVariableForPaint({type:'SOLID', color:{r:0,g:0,b:0}}, 'color', iconPositiveVar)];
 }
 ```
-Verified on a production admin dashboard, the Patterns page (a detail-field-row pattern) — a checkmark icon (`icon-box Style=Positive` + Lucide `check`) went through 4 rounds of edits with a black glyph on a green background unnoticed until the user explicitly pointed at the omission; the copy icon in the same pattern was recoloured from the start and therefore didn't mask the problem in its neighbour.
 
 ### createinstance-from-mainComponent-drops-sibling-overrides
 **Principle:** `existingInstance.getMainComponentAsync` returns the master component WITHOUT the instance-level overrides applied on `existingInstance` (e.g. `swapComponent` on a nested the icon placeholder). Creating a new copy via `master.createInstance` is NOT a clone of the existing instance but a fresh instance of the master with its defaults: the nested the icon placeholder returns to its original (usually generic/placeholder) look; the swap to the needed Lucide icon is lost.
@@ -336,7 +332,6 @@ const newIcon = master.createInstance(); // glyph = the default placeholder, not
 const placeholder = newIcon.findOne(n => n.type === 'INSTANCE');
 await placeholder.swapComponent(await figma.importComponentByKeyAsync(copyIconComponentKey));
 ```
-Verified on a production admin dashboard, the Patterns page — a copy icon created via `mainComponent.createInstance` "after the pattern" of a working neighbour rendered as a placeholder glyph (asterisk-like); caught by screenshot verification right after creation, not after the fact.
 
 ### instance-internal-appendchild-blocked-detach-to-edit-structure
 _The same class as `insertchild-inside-instance-any-depth` above — a specific case with an intermediate FRAME._
@@ -351,13 +346,11 @@ const detached = instance.detachInstance(); // now an ordinary FRAME — appendC
 const spacer = figma.createFrame();
 detached.findOne(n => n.name === 'Frame 2147225399').appendChild(spacer); // fine after detach
 ```
-Verified on a production admin dashboard, one of the sections — an attempt to add a 48 px reserve (an icon reserve) inside a live the content-row component instance failed on `appendChild`; after `detachInstance` the same structural edit passed normally.
 
 ### resize-silently-ignored-on-fill-sized-instance-nested-text
 **Principle:** On a TEXT node lying INSIDE a live (not detached) instance and taking part in auto-layout as `layoutSizingHorizontal='FILL'`, calling `node.layoutSizingHorizontal='FIXED'; node.resize(W, H)` throws no error but also doesn't change the actually rendered width — a repeat `.width` read (including in a SEPARATE, definitely non-stale next `use_figma` call) shows the previous FILL-computed value, not the requested `W`. Unlike the ordinary auto-layout rule (`layoutsizing-fill-silent-noop-primary-axis`), the simple `constraints` workaround doesn't help here — the node lies inside an instance subtree where a structural override of text sizing properties apparently isn't applied by this API path at all.
 **Symptom:** several different attempts (different orders of `resize` / `layoutSizingHorizontal`, different target widths) consistently return ONE and the same width number regardless of the request — a signal that the mutation doesn't reach this node at all, not that a stale/wrong value is applied.
 **Pattern:** don't waste attempts on call order / repeat reads — if the node is inside a live instance and `resize` on it doesn't change `.width` even in a fresh subsequent call, the only working way is `topLevelInstance.detachInstance`, then resize on the detached copy of the node (see the neighbouring entry about `appendChild`).
-Verified on a production admin dashboard, one of the sections — the `value` text (`#2`) inside a the content-row component instance consistently returned a 406 px width on attempts to set 47/92/145/226 px in five different calls; after `detachInstance` the same `resize` worked first time.
 
 ### cascade-detach-loses-boolean-component-properties-order-matters
 _Extends `detachinstance-cascades-to-instance-ancestors` above — a specific consequence for boolean component properties._
@@ -376,7 +369,6 @@ let actionsGroup = header.findOne(n => n.name === 'actions group');
 actionsGroup = actionsGroup.detachInstance(); // header became a FRAME
 header.setProperties({ 'Show tabs#244:13': true }); // TypeError or no-op — header is no longer an INSTANCE
 ```
-Verified on a production admin dashboard, one of the sections (the page-header component, the COMPONENT_SET).
 
 ### actions-group-button-reorder-via-wrapper-only-detach
 **Principle:** To swap two `button` instances inside a variant wrapper (e.g. the actions group, `Actions=Double`) — where a direct reorder of children is impossible (a structural mutation inside an INSTANCE boundary is blocked) and swapping content/icons between the buttons is risky (see `instance-swap-resets-vector-bindings`) — detach ONLY THE WRAPPER ITSELF (`actionsGroup.detachInstance`), not the nested button instances. After the detach the wrapper becomes an ordinary FRAME; its direct children (the button instances) remain full DS-linked instances — `insertChild(0, targetButton)` on the wrapper swaps them while fully preserving every button's properties/styles.
@@ -390,7 +382,6 @@ if (actionsGroup.children.findIndex(c => c.id === editBtn.id) !== 0) {
   actionsGroup.insertChild(0, editBtn); // the button with all its properties moves to the first position
 }
 ```
-Verified on a production admin dashboard, one of the sections (the actions group, the COMPONENT_SET, axis `Actions: Single|Double`) — applied identically on 3 existing frames + inherited by 4 more new Detail-tab frames via `clone` of the already-fixed shell.
 
 ### icon-box-wrapper-shares-mastercomponent-across-different-glyphs
 **Principle:** Two working the icon-box wrapper instances with VISUALLY different glyphs (e.g. a green check-circle vs a red x-circle) may resolve `getMainComponentAsync` to ONE AND THE SAME mainComponent id — a shared generic wrapper component. The glyph itself is switched by an INSTANCE_SWAP property deeper in the nested tree (the icon slot → `Icon/<glyph-name>`), not by choosing a different mainComponent at the the icon-box wrapper level. It follows that knowing the mainComponent id of one working instance you CANNOT reliably create an instance WITH ANOTHER glyph via `mainComponent.createInstance` + guessing the nested INSTANCE_SWAP prop — it's more reliable to find an ALREADY WORKING instance with the needed glyph on the page and clone exactly that.
@@ -412,7 +403,6 @@ const trueIcon = checkIconBox.clone();
 const falseIcon = xIconBox.clone();
 ```
 **Rule within the rule:** the composite IDs of the found instances (`I<pageInstanceId>;256:639`) are valid only WITHIN one `use_figma` call — if the plan is to find the icons in one call and clone in the next, `getNodeByIdAsync` on the saved composite ID often (not always) returns `null` in the second call; it's more reliable to search and use in ONE script, or (if split into 2 calls) re-resolve the composite ID afresh with the same `getNodeByIdAsync` at the start of the second call and only then `.clone` — don't rely on remembered IDs between calls for composite instance-sublayer paths (see `composite-instance-ids-invalid-across-separate-use-figma-calls`).
-Verified on a production admin dashboard, one of the sections (bool icons for one of the info blocks, mainComponent).
 
 ### instance-local-override-capability-table
 **Principle:** What CAN be overridden locally on an instance: INSTANCE_SWAP properties → `setProperties`; a nested INSTANCE → `swapComponent`; `characters` — yes; textStyle/fill of nested nodes — yes (cross-instance). What CANNOT: a child's VECTOR geometry, layout direction. If what you need isn't on the list → it's a DS update or a new component, not "tweaking the instance".
@@ -433,7 +423,6 @@ if (target.mainComponent.id === donor.mainComponent.id) {
   // + re-apply originalIconSwap on the new component's icon slot if needed
 }
 ```
-Verified on a production admin dashboard, one of the sections (an "Attach document" task — the text-button component/ vs donor `button`/; the plan wrongly assumed "the same component, just setProperties").
 
 ### swapcomponent-returns-void-not-new-instance
 **Principle:** `instance.swapComponent(newMain)` mutates the node in place and returns `undefined` — like `appendChild` (see `appendchild-returns-void` in the core SKILL.md), the same API class: trying to assign the call's result to a variable and work with it (`const newIcon = oldIcon.swapComponent(newMain); newIcon.findOne(...)`) fails with `TypeError: cannot read property 'findOne' of undefined`. The swap CHANGES the node's id (a new component = a new identity), so the old variable (`oldIcon`) isn't directly usable after the swap either.
@@ -449,7 +438,6 @@ oldIcon.swapComponent(newMain);
 const swapped = iconSlot.findOne(n => n.type === 'INSTANCE'); // the parent iconSlot is stable; search anew
 const vector = swapped.findOne(n => n.type === 'VECTOR');
 ```
-Verified on a production admin dashboard, one of the sections (a bulk manifest — replacing the generic a check icon with a switch icon / a link icon in 6 accordion headers).
 
 ### documented-import-key-not-found-verify-not-remote-before-retrying
 _Extends `getnodebyidasync-same-file-instantiation` above — a specific scenario where the task's own documentation causes the confusion._
@@ -468,7 +456,6 @@ const set = main.parent; // COMPONENT_SET, local to this file
 const target = set.children.find(c => c.name === 'Type=Neutral, Size=S, Paddings=Yes');
 // target.id is used directly (getNodeByIdAsync); importComponentByKeyAsync isn't needed
 ```
-Verified in a design-system token-cluster file (a states catalogue, a preflight task) — the the status badge key from the implementation plan didn't resolve; two OTHER keys from the plan, genuinely external (the menu item / a broken-link icon from a production admin dashboard), imported with the same call without issues — the asymmetry pointed at "a local component", not "no access".
 
 ### swapcomponent-may-rename-node-search-vectors-from-clone-not-by-name
 _Extends `swapcomponent-returns-void-not-new-instance` above — not only a void return but also a renaming risk._
@@ -483,7 +470,6 @@ const swapped = parent.findOne(n => n.name === 'icon master component');
 const vecs = clone.findAll(n => n.type === 'VECTOR' || n.type === 'BOOLEAN_OPERATION');
 for (const v of vecs) { /* recolor */ }
 ```
-Verified in a design-system token-cluster file (a row redesign, planning) — when planning the recolour step for a swapped kebab icon, it was decided to look for the vectors from `btnClone` as a whole, not via a repeat `findOne(name==='icon master component')`, precisely because of this uncertainty.
 
 ### clone-nested-instance-sublayer-from-live-toplevel-instance-works-reparents-to-page
 **Principle:** `.clone` on a deeply nested instance-sublayer node (e.g. an `icon-button` inside an intermediate variant inside a top-level variant — three levels of INSTANCE nesting) works successfully WITHOUT a structural-mutation error, even when a direct `appendChild`/`insertChild` into the same subtree would be blocked (`Cannot move node. New parent is an instance...`). The clone doesn't land as a sibling next to the original inside the protected subtree — it is reparented onto `figma.currentPage` directly (the same effect as `clone-reparents-to-currentpage-if-source-not-on-currentpage` in the core, but here confirmed specifically for a sublayer at depth 3+ inside a LIVE, not detached, instance).
@@ -495,7 +481,6 @@ originalChevron.visible = false; // hide the original (structurally immovable wi
 rowCard.appendChild(chevronClone); // move the clone into the target flow
 chevronClone.layoutPositioning = 'AUTO';
 ```
-Verified in a design-system token-cluster file (a row redesign, planning) — cloning an `icon-button` (a Sort-arrows chevron) from inside a live Header variant the account-trigger header component for reordering relative to a new outer badge, without detaching the instance.
 
 ### check-local-override-before-detaching-protected-instance-for-master-fix
 **Principle:** Before editing a shared master component that may have a live instance inside a protected/read-only node (e.g. the owner's reference mockup that must not be mutated), you needn't immediately detach that instance "just in case" — first check whether the specific affected property (`fills`/`characters`/etc.) ALREADY has its own local override on the instance itself, independent of the master's default (the instance's `boundVariables`/`fills` ≠ the same field on `mainComponent` / the default variant). If an override already exists — editing the master's default **provably** won't change that instance's visual result, because the override covers the default regardless of what it now holds; writing to the protected node (even an "innocuous" detach) isn't required at all.
@@ -507,7 +492,6 @@ const masterDefaultText = masterComponent.findOne(n => n.type === 'TEXT' && n.ch
 // compare boundVariables.color.id — if DIFFERENT, the instance already has its own override; the master can be fixed without risk to the playground
 ownerInstanceText.fills[0].boundVariables.color.id !== masterDefaultText.fills[0].boundVariables.color.id;
 ```
-Verified in the same design-system token-cluster file (a popover) — an independent audit found that the a token-header component master coloured its text with the wrong token; fixing the default could have affected a live instance of that master inside the owner's read-only playground node — comparing `boundVariables` showed the owner's instance already carried its own `text/primary` override, different from the master's current (wrong) `text/secondary` default — so the master fix was guaranteed not to change the playground, which the post-edit screenshot confirmed.
 
 ### appendchild-into-instance-blocked-detach-first-for-decorative-overlay
 _The same class as `insertchild-inside-instance-any-depth` above — the case of decorative content absent from the master component._
@@ -521,7 +505,6 @@ const primaryButton = primaryButtonInstance.detachInstance(); // INSTANCE → FR
 const dot = dotSource.clone();
 primaryButton.appendChild(dot); // works now
 ```
-Verified on a production admin dashboard (row-level busy-state masters of a set of action buttons) — the donor pattern (bulk busy state) was already a FRAME from earlier manual work; a fresh clone of the row-level base symbol carried a live button INSTANCE; the identical script failed on the first run; fix — `detachInstance` before the loop adding 3 dots, repeated on 3 actions of the same set without further errors.
 
 ### resize-fixed-height-instance-child-to-fake-missing-textarea-variant
 **Open discrepancy, unresolved:** this recipe resizes a FIXED-height child DIRECTLY on a live (not detached) clone instance and claims success; `minheight-blocked-on-nested-instance-child-detach-first` below, for an outwardly similar scenario (stretching a text input component's nested auto-layout container), requires a mandatory `detachInstance` FIRST, citing the same class of restriction as the general resize/appendChild block on nested instance children. A possible explanation — here ordinary `width`/`height` is resized via `.resize`, there specifically the constraint properties `minHeight`/`maxHeight` (in Figma these are different APIs with different behaviour on instance children), but this hasn't been re-verified live as of this edit. Before relying on this recipe as "resize works without detach" — re-check in a real file whether the structure has changed (perhaps the input box here isn't an INSTANCE child but a FRAME) and don't mix it up with the minHeight/maxHeight case.
@@ -535,13 +518,11 @@ field.layoutSizingHorizontal = 'FILL'; // the instance itself — HUG vertically
 const box = field.findOne(n => n.name === 'Search Bar'); // the inner FIXED-height child, not field itself
 box.resize(box.width, 96); // was 48 — a visually "multi-line" field with the same atom
 ```
-Verified on a production admin dashboard, one of the sections (the open state of one of the form modals, a comment text field): the DS has no separate Textarea, and neither does the code (`Input multiline` — the same React component). An the search-input component instance (label `HUG` + the input box `FIXED` 48h) was cloned; the input box resized `48→96` — the final screenshot showed a correctly enlarged field without clipping / a drifted label; the the content layout wrapper (`HUG` height) recomputed automatically.
 
 ### component-cascade-instance-vs-manual-clone-inheritance-divergence
 **Principle:** When one and the same "result" is reused in several places of a file (e.g. a state frame inserted both into the main section and into a summary cascade/gallery), the reuse method depends on the TYPE of the source node. If the source is a COMPONENT, the cascade usually references it through a live INSTANCE — structural edits on the COMPONENT (reparenting children, changing layoutMode, resize) propagate to the INSTANCE automatically without a separate call. If the source is an ordinary FRAME (not a COMPONENT), it has no master/instance link — reuse in the cascade is necessarily done as a manually cloned copy (a CLONE), which does NOT receive subsequent edits of the source automatically and requires an identical repetition of every mutation.
 **Symptom:** a master edit fixes some "copies" of the result for free (because they are live INSTANCEs) while the rest stay in the old form — not because you forgot, but because they are FRAME clones without a link; the difference is visible in the layer name if the file's convention records it, but easy to miss without reading names carefully.
 **Pattern:** before a mass edit of "all copies of one result" — check `node.type` of each copy (or the name suffix, if the file's convention records it). INSTANCE copies — edit only the master. CLONE copies — repeat the identical mutation on each explicitly.
-Verified on a production admin dashboard (row-level failure frames of a set of three action buttons) — the failure frame of the first action turned out to be a COMPONENT (cascade = a live INSTANCE; the master fix propagated for free); the failure frames of the other two actions were ordinary FRAMEs (cascade = independent CLONEs /, named with a suffix `[CLONE — donor..., updated]`), and needed the same structural rearrangement (toast beside the modal, not under it) by hand once more on each.
 
 ### instance-swap-icon-inherits-foreign-library-strokeweight-not-just-color
 **Principle:** A Lucide component imported via `importComponentByKeyAsync` / INSTANCE_SWAP carries a FOREIGN (source-library) variable not only on `strokes` (colour — already documented, see `setboundvariableforpaint-instance-child-strokes` in `variables-and-tokens.md`) but SEPARATELY on `strokeWeight` too — these are different bound variables; BOTH must be fixed/rebound, not only the colour. The symptom "the colour is already rebound to the local token and it still looks wrong" almost always means the strokeWeight was left untouched.
@@ -553,13 +534,11 @@ vec.setBoundVariable('strokeWeight', localStrokeThinVar); // separately from the
 const newStrokes = vec.strokes.map(s => figma.variables.setBoundVariableForPaint(s, 'color', localIconColorVar));
 vec.strokes = newStrokes;
 ```
-Verified in a design-system file, Chip icons in a SearchSettingsSheet composition — 3 instances × light/dark; the foreign strokeWeight var resolved to 1.5/1.8 (off convention); the local `Icon Stroke/stroke/thin`=1 gave a render matching the code (`Icon.tsx: strokeWidth={1.8}` in a 24-unit viewBox ≈ 1 px at 13 px scale).
 
 ### master-fills-opacity-fix-does-not-reliably-cascade-strokes-do
 **Principle:** A master-level edit `node.strokes = [...]` (e.g. removing a stroke) cascades to nested live INSTANCE copies across the file just like `textStyleId` edits (see text-and-styles.md) — BUT an edit `node.fills = [...]` (in particular adding/changing `opacity` on a paint) **doesn't reliably cascade** even to the very same nodes in the very same copies where strokes just cascaded successfully. This is an asymmetry specifically between `strokes` and `fills`, not a general rule "paint properties don't cascade".
 **Symptom:** one and the same script mutates both `strokes` and `fills` on a component's master variant; a repeat read of a downstream copy (the same node, the same nodeId suffix) shows `strokes` updated (an empty array) and `fills[0].opacity` UNCHANGED (the old value), although the master mutation succeeded and is visible on the master itself. Probable cause: if the tiles/nodes were originally created by a script that wrote `fills` DIRECTLY onto every generated instance copy (not only onto the master) at build time — Figma may treat this as "an already explicitly set local override" for `fills` specifically, blocking future cascade for that property, while `strokes` on the same nodes were never touched that way and remain a "silent" (inherited) link.
 **Pattern:** after a `fills`/`opacity` edit on the master — ALWAYS re-read at least one downstream copy; don't rely on cached trust in the cascade from earlier sessions (even within one session where the cascade for `strokes`/`textStyleId` was just confirmed). If `fills` didn't cascade — apply the identical mutation explicitly at every place of use (all embedding locations), not only on the master.
-Verified in a design-system file, fixing cross-hatch tiles of `MetricBarRow Kind=edge` (12 tiles × 4 places of use: the component itself, RangePanel, SearchSettingsSheet light+dark) — a master-variant edit did simultaneously `vec.strokes=[]` (stroke removal) and `tile.fills=[{...,opacity:0.3}]` (tinting the background for the two-tone pattern from the code; see the rule below) — strokes cascaded to all 4 places instantly, fills/opacity to none; the fills mutation had to be repeated explicitly on all 48 tiles (4×12) separately.
 
 ### hatch-pattern-must-match-css-gradient-color-stops-exactly-not-approximate-with-stroke-outline
 **Principle:** When recreating a CSS `repeating-linear-gradient` (diagonal hatching) through a cloned tile grid (see `mcp-and-environment.md` about the PatternPaint runtime rejection) — the colour pair MUST exactly copy the gradient's colour stops (usually two tones of ONE colour at different opacities, e.g. `var(--accent) 0 4px, color-mix(accent 30%, transparent) 4px 8px`), not be replaced with an approximation like "solid background + a thin outline of the stripe". A thin (1 px) outline on an 8×8 tile visually reads as a noisy crosshatch/moiré on export, not as a clean diagonal stripe — because the contrast between the tile background and the stripe fill is then either absent or rests on the outline-vs-fill difference (usually barely visible if both tones are close), not on the two fills themselves.
@@ -570,7 +549,6 @@ tile.fills = [{ ...tile.fills[0], opacity: 0.3 }];  // tile background = the sec
 vector.fills = [/* stays accent @ 100% — the first CSS stop */];
 vector.strokes = [];                                 // no outline needed — the contrast comes from the fill, not the outline
 ```
-Verified in a design-system file — before the fix the tile background and the vector fill were ONE and the same opaque `fill/accent-primary`; the difference rested on a 1 px black outline of the pentagon (barely visible contrast; read as noise on export/zoom); after the fix — background 30%, stripe 100%, no outline — matched the production screenshot.
 
 ### nested-detachinstance-cascades-up-invalidating-all-ancestor-instance-ids
 **Principle:** `childNode.detachInstance` on a node nested 2+ levels inside LIVE instances (e.g. a MetricBarRow instance inside a Histogram instance inside a RangePanel instance) may implicitly detach not only the IMMEDIATE parent but, IN CASCADE, all instance ancestors up to the first non-instance (FRAME/SECTION/PAGE) container — not only the one level already described in the `figma-use` skill ("Parent instance was implicitly detached by a child detachInstance"). Previously saved IDs of ANY of these intermediate ancestors (not only the direct parent) become invalid at the same time.
@@ -585,7 +563,6 @@ await figma.getNodeByIdAsync(clone.id); // null — even clone.id became invalid
 // ✅ rediscovery through a stable non-instance ancestor (wrapper — an ordinary FRAME)
 const rediscovered = wrapper.children.find(c => c.name === 'RangePanel');
 ```
-Verified in a design-system file, a a states section / RangePanel empty case — `detachInstance` on a nested MetricBarRow (`Kind=best`) invalidated the RangePanel clone's ID captured one level above through the Histogram instance.
 
 ### rescale-throws-explicit-error-where-resize-silently-noops-on-nested-instance
 **Principle:** Extends `resize-silently-ignored-on-fill-sized-instance-nested-text` above — the same silent no-op of `resize` reproduces on NON-text nodes too (e.g. an icon INSTANCE), even when `layoutSizingHorizontal`/`layoutSizingVertical` are already `'FIXED'` (not `FILL` — so it's not only about the auto-layout sizing mode). Diagnosis: `node.resize(w, h)` on such a node throws no error and doesn't change `.width`/`.height` (checked even via an immediate re-fetch `getNodeByIdAsync` with the same id in the same call) — while `node.rescale(factor)` on THE SAME node immediately throws an explicit `Error: in rescale: This property cannot be overridden in an instance`, which names the exact cause.
@@ -604,7 +581,6 @@ let fixed = await figma.getNodeByIdAsync(id);
 if (fixed.type === 'INSTANCE') fixed = fixed.detachInstance();
 fixed.resize(12, 12); // ✅ 12×12
 ```
-Verified in a product file (a pixel-perfect interface clone) — a chevron-down 18×18→12×12 in the header of one of the summary blocks, nested 2 levels inside the `entity` INSTANCE; the detach turned the whole `entity` instance into a FRAME in cascade (all descendant IDs changed — the Badge chips and the add-chip were rediscovered via a fresh `get_metadata`).
 
 ### invisible-instance-visible-false-returns-empty-children-unless-skipinvisibleinstancechildren-disabled
 **Principle:** An INSTANCE whose `visible` is driven by `componentPropertyReferences.visible` (a BOOLEAN prop of the parent bound to visibility, e.g. "Show X"), at a currently resolved value of `false`, returns `node.children.length === 0` on a walk — even when the master component of that variant definitely contains children (Label/Value etc.), and `get_metadata` / a structural read of the instance as a whole looks valid (the node is found; `visible: false` reads correctly). The reason — the environment by default treats `figma.skipInvisibleInstanceChildren` as `true` (unlike the standard Plugin API default of `false`), so descendants of currently invisible instances aren't materialised on a walk until the flag is explicitly set to `false`.
@@ -624,7 +600,6 @@ for (const id of rowInstanceIds) {
   const label = inst.findOne(n => n.name === 'Label' && n.type === 'TEXT'); // now found even on the invisible instance
 }
 ```
-Verified in a product file (a Summary widget, a DS-token polishing round) — verifying the text-style cascade on 4 the summary-row component instances inside the widget; the 4th ("Method", hidden by default via `Show Method=false`) gave `children: []` and crashed the script until the flag was explicitly lifted.
 
 ### instance-child-remove-throws-use-swapcomponent-which-preserves-geometry
 **Principle:** `.remove` on a node deeply nested in an INSTANCE tree (e.g. a logo/icon inside a nested slot instance of a chip/row) throws `Error: in remove: Removing this node is not allowed` — the Plugin API forbids structural removal of sublayers inside an instance. The working substitute for "change the icon" is `oldNode.swapComponent(newComponent)` on THAT nested node itself (not on the parent/wrapper): it throws no error and, importantly, **itself preserves** the current `x`/`y`/`width`/`height` — the new master component is substituted without a visual jump in size/position, even if it has different default dimensions. An explicit `resize` / `x =` / `y =` RIGHT AFTER the swap isn't needed, and on some nested layers even throws a separate `Error: in set_x: This property cannot be overridden in an instance` (the same protection class as the `rescale` rule above in this file).
@@ -641,7 +616,6 @@ iconSlot.appendChild(newIcon);
 const oldLogo = iconSlot.children[0];
 oldLogo.swapComponent(iconComponent); // done — resize()/x=/y= aren't needed and sometimes throw
 ```
-Verified in a product file (one of the search features — chip icons on the search settings screen + row icons on a new picker component) — reproduced twice independently (a provider logo inside a the chip-label slot instance, a provider logo inside a the select-list rows row).
 
 ### findone-crashes-on-deep-instance-subtree-use-non-descending-bfs
 **Principle:** Extends `findone-type-guard-first-operand` / `findone-first-match-traversal-order` (SKILL.md) — the built-in `node.findOne(predicate)` can STABLY (not flaky; reproduced 3× in a row on the same node) crash with `"findOne" callback crashed: Error: in get_name: Node with id "..." not found` when the traversal reaches a deeply nested node inside a large INSTANCE subtree (e.g. a logo icon with ~8 nested VECTOR `path` children) — while the same node resolves perfectly directly via `figma.getNodeByIdAsync(thatExactId)` seconds later. Looks like instability of the `findOne` traversal engine itself on large INSTANCE subtrees, not a real absence of the node.
@@ -661,7 +635,6 @@ function findByName(root, name) {
 function findFirstInstance(root) { /* the same walk, stops at the first type === 'INSTANCE' */ }
 ```
 As a side effect it also solves another problem of the same case: semantically identical list rows (rows of one the select list) may have unequal nesting depth among themselves (some rows — `Entity info → [logo, Name wrapper]` directly, some — with an intermediate `Icon wrapper`; `CheckBox box` also at varying depth) — a fixed `.children[N]` / a single-level `.children.find` isn't universal for all rows of one list, while a non-descending BFS finds the needed node regardless of which level it landed on in a specific row.
-Verified in a product file (one of the search features, picker-component rows, the select-list rows inside an the account picker clone) — the crash reproduced 3× in a row on one provider's row (8 nested VECTOR paths of its logo); after switching to the non-descending BFS all 5 rows (including 2 with an unforeseen `Icon wrapper`) were processed without a single error.
 
 ### swap-component-can-change-sublayer-nesting-depth-relative-id-suffix-not-stable
 **Principle:** `instance.swapComponent(newMaster)` changes the master component while keeping the instance's position/size (see `instance-child-remove-throws-use-swapcomponent-which-preserves-geometry` above), but does NOT guarantee the same inner structure / nesting depth between the old and new master — even for visually similar icons of one library. After the swap the relative sublayer-ID suffix (`I<instanceId>;<masterPath>`) may become longer/shorter if the new master has a different number of intermediate INSTANCE wrappers.
@@ -678,7 +651,6 @@ function describe(n, depth) {
 }
 // call right after swapComponent(), BEFORE any recolouring — learn the new master's real depth
 ```
-Verified in a product file (an "Event history" screen) — `check-circle` (1 level) swapped to `x-circle` from an external component library (`swapComponent`) → 2 levels; the probe before recolouring revealed the real structure; addressing the glyph by analogy with the old check-circle path would have been wrong.
 
 ### top-level-componentproperties-copy-misses-nested-overrides
 **Principle:** Copying `componentProperties` between two instances of one master transfers only TOP-level properties. Column captions, badge texts, the content of nested instances live as overrides on nested nodes and aren't transferred by such copying — the new instance silently stays with the master's defaults.
@@ -702,7 +674,6 @@ for (const it of items) {
 }
 ```
 **Limits of the technique:** the mapping breaks where a nested instance in the source was **replaced** (`swapComponent`) — the replacement has a different subpath, and the target node isn't found. Such places (a typical example — a select's trailing icon replaced with `chevron-down`) must be transferred by a separate explicit swap.
-Verified twice on a production admin dashboard: while assembling one section and while rebuilding another — both times the top-level diff was empty and the table rendered with the master's defaults.
 
 ### minheight-blocked-on-nested-instance-child-detach-first
 _See the open caveat in `resize-fixed-height-instance-child-to-fake-missing-textarea-variant` above — this entry is specific to `minHeight`/`maxHeight` (constraint properties), not ordinary `.resize`/`width`/`height`; don't conflate the scopes without re-checking live._
@@ -717,7 +688,6 @@ const frame = Array.isArray(detached) ? detached[0] : detached; // the API may r
 const innerAutoLayout = frame.findOne(n => n.name === 'Search Bar');
 innerAutoLayout.minHeight = 124; // works now — an ordinary FRAME, not an instance boundary
 ```
-Verified in a product file (a cancel-reason free-text detail screen) — `input-text area` (an external component library) has no multiline/autoResize DS mode of its own; the multi-line visualisation ("≈5 lines" placeholder height) was assembled via a forced `minHeight` on a detached copy.
 
 ### exclude-device-chrome-instances-from-screen-wide-normalisation-sweeps
 
@@ -733,7 +703,6 @@ for (const id of ['<status-bar-instance>', '<url-bar-instance>']) {
 // in any blanket pass: if (chrome.has(n.id)) continue;
 // the instance root — decide separately; its fill is usually the product's
 ```
-Verified on a mobile web paywall (Limited Profile Details) — a "Helvetica Neue → Roboto" pass also converted the time in the status bar and the product address in Safari's address bar; the original `SF Pro Text` and `SF Compact Display` aren't installed, so only `SF Pro` could be restored. Next, a cleanup of product variables inside the chrome removed the teal binding from the status bar root, where it was needed.
 
 ### deep-instance-sublayer-id-not-addressable-walk-from-container
 **Principle:** `getNodeByIdAsync` on a deep instance-sublayer id (`I<a>;<b>;<c>;<d>;<e>;<f>` — five or six segments and more) may return `null`, although the same node came up in a traversal's output a minute ago and the id was copied from it verbatim. Short sublayer ids (two or three segments) resolve meanwhile. Such nodes can't be addressed directly — they must be rediscovered by walking from a CONTAINER whose id does resolve (the control's instance itself, the state frame), and identified by a feature, not by id.
@@ -753,7 +722,6 @@ for (const g of glyphs) {
   if (cur && cur.name === 'text/tertiary') { /* rebind */ }
 }
 ```
-Verified on a production admin dashboard: four glyph rebinds failed together with "node not found" by ids from the script's own read output; the same script via a walk from the controls processed all four.
 
 ### icon-paint-lives-on-strokes-not-fills
 **Principle:** In Lucide-family icons (and anything drawn as an outline) the colour lives in `strokes` and `fills` is empty. Reading only `fills` gives `null` and reads as "the glyph isn't painted" — while you were just looking in the wrong place. The `surface-check` capture script takes `paintVar(v.strokes) || paintVar(v.fills)` in exactly this order for a reason.
@@ -774,7 +742,6 @@ const dropzone = await figma.getNodeByIdAsync('4058:3983'); // the <instance> it
 const caption = dropzone.findAll(n => n.type === 'TEXT').find(t => t.characters.includes('png'));
 caption.getRangeFontName(0, 1); // works
 ```
-Verified in a component library file — `get_metadata` on a the drop-zone component instance inside an approval sheet showed the caption text under id; the next `use_figma` script with that id failed atomically (the whole script rolled back) before applying a single mutation — fixed by resolving the instance's own id and walking via `.findAll`.
 
 ### empty-slot-socket-shares-name-with-its-own-default-filler-match-on-double-nesting-not-bare-name
 **Principle:** A "socket" component for an instance-swap slot (the wrapper through which an icon/content is substituted into another component) may be named the same as its OWN unfilled default (in the verified case the socket and its default stub are both named the icon-socket component). A search by the bare instance name (`node.name === 'design-plug'`) matches BOTH states — the empty slot and the correctly filled one (a filled slot is the same the icon-socket component socket, just with a real icon INSIDE it rather than that same stub). On a canonical UI-kit file with a hundred+ live, correctly assembled icon slots such a search gives 100% false positives.
@@ -797,7 +764,6 @@ function findBrokenSlots(host) {
   return broken;
 }
 ```
-Verified in a component library file — the first pass by name-without-nesting gave 47 "finds" across 5 pages; of 27 checked by screenshot, 7 turned out to be working chat composer icons (paperclip/send — false positives). The nesting detector on the same file gave 20 real ones confirmed by render — all 20 indeed showed the abstract half-circle stub.
 
 ### instance-swap-preferredvalues-keys-unresolvable-fallback-to-local-instance
 **Principle:** `componentPropertyDefinitions` / `componentProperties` for an INSTANCE_SWAP property may list `preferredValues` (component keys) from an external library not connected in this session — EVERY key fails on `figma.importComponentByKeyAsync(key)` with "Component with key "..." not found", although the file itself clearly uses these icons somewhere (so the library physically existed at publication time; it's just unavailable to the current MCP session). Trying to set the needed icon via `setProperties({...})` on that property in this situation is pointless — the attempt itself won't throw at once, but the result doesn't change (the socket stays at the default).
@@ -812,14 +778,12 @@ const workingRef = await figma.getNodeByIdAsync('I<known source>;<...>'); // an 
 const brokenSocket = /* the socket found inside the broken button */;
 brokenSocket.swapComponent(await figma.getNodeByIdAsync(workingRef.mainComponent.id));
 ```
-Verified in a component library file — a "Copy link" button needed a copy icon; all 36 `preferredValues` of the `UI Icon#2011:0` slot didn't resolve. Nearby on the same page a "Copy" button was found with an already working `copy-06` icon (id, inserted via a separate, older direct-instance pattern without a socket wrapper) — `swapComponent` to it gave a pixel-identical size (20×20 before and after), a result visually confirmed by screenshot.
 
 ### deeply-nested-instance-property-read-throws-on-phantom-internal-id
 **Principle:** On a node living inside a repeatedly cloned / repeatedly rebound tree of instances (INSTANCE inside INSTANCE inside INSTANCE, 4+ levels), reading a simple property (`.visible`, `.name`) on a child node may throw `Error: in get_<prop>: The node with id "X" does not exist` — where `X` matches neither the requested ID nor any known ID in the tree. This isn't a race condition from your own mutation (see `use-figma-stale-reads-after-mutation` above) — the error is caught on the FIRST read, without preceding writes in the same script. `getNodeByIdAsync` on such a path either silently returns `null` (even when the node definitely exists and is visible on the screenshot) or returns an object on which literally any property getter fails.
 **Symptom:** the same path to a node (`I<instanceId>;<componentId>`) reads fine in one call (a full recursive dump via a custom function with manual `node.children`), and in the next call the same way — `getNodeByIdAsync` returns `null` or an object with a broken getter on a COMPLETELY DIFFERENT internal id. A manual walk `node.children.find(c => c.name === '...')` may also, at some nesting level, return a node without a single expected child, although an earlier dump of the same tree showed them.
 **Pattern:** don't bang on a specific path with repeat attempts (retry/backoff doesn't help — it's not a transient delay). If the task is low-priority (a cosmetic chip/badge, not a structural finding) — compare with a live screenshot: if the element isn't visible on the current render, treat the finding as non-reproducible and don't force a fix of a node that doesn't exist at the moment — a stale write-up / note of an earlier review isn't the file's current state. If the fix is mandatory — don't read/write the deeply nested override directly; instead work at the level of the nearest stable container (the top-level INSTANCE itself, not its Nth nested descendant) via `setProperties` on a component property if one exists, or delete/rebuild the whole top-level instance rather than mutating its internals pointwise.
 **Observation:** similar render instability (not only property reads) in the same file and area was recorded independently: `get_screenshot` on individual the status card instances returned degenerate 1×1 px images with perfectly normal node geometry. May be the same class of file instability on repeatedly cloned / heavily overridden instances, not two different bugs.
-Verified in a component library file — an attempt to hide a "User tag" chip (the chip-label slot inside a the tag group, nesting the status card → the card's bottom row → the chip group → the tag group) on 6 cards of a `/disputes` list: the first direct dump confirmed the chip as live text; three subsequent attempts (a constructed `I<id>;501:5279` path, `findAllWithCriteria` by text, a manual `.children` walk) — three different failures (`get_visible`/`get_name` on phantom ids, an empty the tag group without a second child). The final live screenshot of the screen didn't show the chip at all — the finding wasn't forced; recorded as not reproduced.
 
 ### appendchild-into-instance-blocked-detach-outer-wrapper-to-compose
 _The same class as `insertchild-inside-instance-any-depth` above — the key nuance here: detach ONLY the outer wrapper; the nested component instances stay live._
@@ -837,7 +801,6 @@ const mainContentRow = navFrame.findOne(n => n.name === 'Main content'); // the 
 mainContentRow.appendChild(newBadgeInstance); // works
 ```
 Practical consequence: this explains why existing "detached header" findings in a file (per earlier audits) aren't always the result of careless cloning — sometimes it's the only way to add a non-standard slot (a badge, a toggle, a CTA) to a component with a fixed structure, and the next session shouldn't automatically treat such a detach as a regression without checking whether it carries exactly a custom composition over an otherwise unchanged structure.
-Verified on a production admin dashboard — assembling a a detail-page shell: between the title sub-instance (title) and the actions group a new node a status-toggle block (a status Tag + Switch) had to be inserted inside the page-header component (, `Show tabs=true`). A direct `appendChild` into `Main content` failed; `detachInstance` of the outer instance solved it in one step; `breadcrumps` / the title sub-instance / `tabs` / the actions group remained working live instances (`swapComponent`/`setProperties` on them kept working unchanged).
 
 ### repurposed-slot-empty-wrapper-skews-autolayout-centering
 _A continuation of the same recipe as `appendchild-into-instance-blocked-detach-outer-wrapper-to-compose` above — "hid the repurposed cell's old content" ≠ "removed the old content"._ After `detachInstance` on a former `table cell type=Text` (reused for arbitrary new content — e.g. a row of tags instead of Title/Subtitle) it's not enough to hide the original TEXT nodes (`findAll(n => n.type==='TEXT').forEach(t => t.visible=false)`) — if Title/Subtitle are themselves nested in an intermediate wrapper FRAME (the typical DS-component pattern for a "title + subtitle" stack), that wrapper stays `visible: true` and empty but still takes its place in the parent's auto-layout (padding/itemSpacing around it apply as if it had content) — the newly added content ends up shifted from the centre/top to where the empty neighbour left room for it, not where it would sit as the sole real child. A structural check (`primaryAxisAlignItems: 'CENTER'` is indeed set on the parent) doesn't catch it — the problem isn't the set property but an extra participant in the computation.
@@ -852,7 +815,6 @@ const emptyWrapper = cellShell.children.find(c => c.name === 'text'); // typical
 if (emptyWrapper) emptyWrapper.remove();
 cellShell.appendChild(newTagRow); // now the sole child — centres correctly
 ```
-Verified on a production admin dashboard — the ROLES column in a Users tab: `rolesCell.primaryAxisAlignItems='CENTER'` was set correctly, but the tag row (h=32) sat at `y=31` inside a cell of `h=64` (the true centre — `y=16`) because of an un-removed empty `text` wrapper (h=20) before it in the children list. See also `fixed-sidebar-vs-hug-content-row-leaves-asymmetric-fill-gap` and `inserting-siblings-into-fill-anchored-row-breaks-implicit-spacer` in `layout-and-geometry.md` — three different pitfalls of one session, all with a common root: editing an existing composition (insertion/hiding) without rebuilding its structural assumptions for the new set of children.
 
 ### resize-on-nested-live-instance-silently-reverts-detach-that-instance-too
 **Principle:** `detachInstance` on the OUTER wrapper (see the entry above) doesn't make the entire subtree editable — nested component instances (breadcrumb, the title sub-instance, `tabs`, the actions group, etc.) remain live INSTANCE nodes. If the target edit is not the insertion of a new sibling (for which detaching the outer wrapper suffices) but **a geometry change of a node lying INSIDE one of those nested instances** (e.g. `resize` / `layoutSizingHorizontal` on the title TEXT node nested in the live the title sub-instance instance) — detaching the outer wrapper isn't enough: that specific nested instance must be detached too.
@@ -872,14 +834,12 @@ const textLayout = titleNode.parent;
 textLayout.layoutSizingHorizontal = 'FIXED';
 textLayout.resize(300, textLayout.height); // now holds 300 stably
 ```
-Verified on a production admin dashboard — an attempt to cap a team title at 300 px (truncation) after the outer the page-header component had already been detached earlier in the same session: seven consecutive attempts with different combinations (`textAutoResize`, resize/truncation order, `layoutSizingHorizontal` vs `primaryAxisSizingMode` on the intermediate the title wrapper) consistently gave 173 px instead of 300 — it turned out the title sub-instance (the title instance) was itself still a live INSTANCE, never detached separately. Detaching exactly it solved the task first time.
 
 ### importcomponentbykeyasync-fails-for-local-unpublished-component
 _The same class as `getnodebyidasync-same-file-instantiation` and `documented-import-key-not-found-verify-not-remote-before-retrying` above — three confirmations of one fact (importComponentByKeyAsync doesn't resolve local components) on different projects; here — a short illustration on a cursor component._
 **Principle:** `figma.importComponentByKeyAsync(key)` is meant for components published to a team library — for a LOCAL (unpublished) component of the same file it throws `Error: Component with key "..." not found`, even though the component really exists and is instantiated elsewhere in the same file.
 **Symptom:** `mainComp.key` resolves fine (`getMainComponentAsync` on an existing instance returns a valid key), but `importComponentByKeyAsync(key)` with that same key fails "not found".
 **Pattern:** for a local component — don't import by key; clone the existing node/instance directly: `const src = await figma.getNodeByIdAsync(knownInstanceId); const clone = src.clone; targetParent.appendChild(clone);` — works cross-page within one file (see `cross-page-appendchild-moves-node` / `clone-reparents-to-currentpage-if-source-not-on-currentpage` in the core SKILL.md).
-Verified on a production admin dashboard — an attempt to import a a decorative cursor instance cursor component (`Type=Pointer`) failed; direct cloning of an existing instance (, page "08 List Page B") from another page of the same file worked without issues.
 
 ### instance-children-are-not-a-reliable-inventory-read-the-main-component
 **Principle:** Hidden descendants of an INSTANCE don't show up in `children` / `findAll` (the sandbox behaves as if `figma.skipInvisibleInstanceChildren` were `true` — see `invisible-instance-visible-false-returns-empty-children-unless-skipinvisibleinstancechildren-disabled` above for the flag). Read the *main component* to learn what a node contains — the instance only reports what is currently visible. This is one-way: you can set `visible = false` on a nested node, but afterwards you cannot find it again to set it back without the flag.

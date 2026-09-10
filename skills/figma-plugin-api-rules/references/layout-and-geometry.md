@@ -36,7 +36,6 @@ rect.relativeTransform = centeredRotatedTransform(w, h, cx, cy, angleDeg);
 **Symptom:** `use_figma` throws no error at any step; `node.fills` / `node.children` / `absoluteBoundingBox` after the mutation show COMPLETELY correct data (checked repeatedly), but `node.screenshot` / `get_screenshot` renders emptiness — sometimes with a partial artefact (the last-added / topmost layer is visible, earlier layers and the clip frame's background are not). Cheap false lead: looks like "stale read after mutation" (see `use-figma-stale-reads-after-mutation` in SKILL.md) — but a repeat screenshot in a separate call (even after several read calls) gives the same empty result; this is NOT staleness.
 **Pattern (workaround):** temporarily set `clipsContent=false` / `cornerRadius=0` on the frame — the mixed axis+rotated content then renders correctly (confirming the bug is in the clip pipeline, not the geometry). For the final round/rounded result either (a) don't mix 0° and 45° geometry inside a clip subtree at all (simplify the design to one orientation family — e.g. a GB flag built as an axis-aligned white+red cross only, without the diagonal saltire, instead of the full Union Jack), or (b) for shapes without diagonals, plain ELLIPSE/STAR (without custom rotation via vectorPaths) inside the clip frame render fine (e.g. a TR flag as a red circle + white crescent from two overlaid ELLIPSEs + `figma.createStar`, not a single rotated rectangle — worked first try).
 **Symptom when trying to prove it via `figma.union`:** merging axis+rotated shapes into ONE `BOOLEAN_OPERATION` node (hoping to dodge a "sibling conflict") does NOT help — the union result itself renders empty inside a clip ancestor; hiding one of the two union nodes (white/red) doesn't restore the other's visibility — the whole clip subtree breaks together, not layer by layer.
-Verified on a finance-domain app file (profile page redesign, second fix round) — an attempt to build the full Union Jack (diagonal saltire + straight cross) inside a round 24×24 icon for a language picker; after ~15 diagnostic iterations (relativeTransform vs vectorPaths, raw vectors vs union, different sibling counts, different angle combinations, removing clipsContent) it reduced to the rule above; the practical solution was a simplified flag (straight cross only) for GB and plain ellipses + star for TR.
 
 ### layoutsizing-fill-silent-noop-primary-axis
 **Principle:** `layoutSizingHorizontal = 'FILL'` is silently not applied on a frame with its own `layoutMode` whose primary axis matches the FILL direction — `primaryAxisSizingMode: 'FIXED'` blocks it; for containers with `layoutMode: NONE` use constraints instead of sizing (`horizontal: 'STRETCH'` — stretch to the parent, `'SCALE'` — keep the proportion).
@@ -247,7 +246,6 @@ row.insertChild(row.children.findIndex(c => c.id === anchor.id), clone); // live
 
 toDelete.forEach(n => n.remove());            // remove AFTER insert, by reference — not by index
 ```
-Verified on a production admin dashboard (List Page A) — the identical fix (3 deletions + 1 insertion) applied row by row to 15 rows across 3 tables (baseline / uncropped / bulk-selection) with zero width or style discrepancies between cells.
 
 ### fixed-sizing-row-frame-does-not-shrink-after-child-deletion
 **Principle:** A table ROW frame (`layoutMode: HORIZONTAL`, `primaryAxisSizingMode: 'FIXED'`) stores its own `.width` as a separate property, not derived from the sum of its children — deleting/narrowing child columns does NOT recompute `row.width` automatically (unlike `primaryAxisSizingMode: 'AUTO'`, where it happens by itself). The row stays physically wide (e.g. 5264 px — the old 24-column size) even when the visible children already sum to 1184 px — the extra space is simply empty and invisible while the container clips to its narrow width.
@@ -260,7 +258,6 @@ for (const row of tableFrame.children) {
   row.resize(sum, row.height); // without this row.width keeps the old value, hidden by the clip for now
 }
 ```
-Verified on a production admin dashboard (List Page B) — found while building a full-width uncropped reference of a provider list: all 5 ROWs (header + 4 data) physically stored `width=5264` (inherited from the original 24-column donor, List Page A) even though the children had been reduced to 10→8 columns several sessions earlier.
 
 ### table-header-resize-silently-reverts-row-cells-keep-it
 **Principle:** In a table with separate `table header` / `table cell` INSTANCE rows (not a single grid structure), a `.resize(w, h)` call on a HEADER cell can be confirmed by the call itself (the `return` value shows the new width) and yet revert to the original width by the NEXT `use_figma` call — while `table cell` instances in the SAME data rows, changed in the same script, keep the new width stably. Both types are instances of the same remote `COMPONENT_SET`; the exact cause of the asymmetry (why the header variants revert) is not established.
@@ -288,7 +285,6 @@ actionsGroup.remove(); // removed the duplicate Actions button (design note: don
 titleRow.primaryAxisAlignItems = 'MIN'; // without this the remaining text "drifts" right of centre / old space-between logic
 titleRow.counterAxisAlignItems = 'MIN';
 ```
-Verified on a production admin dashboard (List Page B) — while assembling a key-value "Main info" block for a provider detail tab (clone of an attachment donor, the title row, without the duplicate actions button).
 
 ### appendchild-cross-orientation-resets-fill-to-fixed
 **Principle:** `parent.appendChild(existingNode)`, when the new parent is an auto-layout with a DIFFERENT orientation from the previous one (e.g. the node lived in a `VERTICAL` stack with `layoutSizingHorizontal='FILL'` and moves into a `HORIZONTAL` row), silently resets the child's `layoutSizingHorizontal` to `'FIXED'` at the currently rendered width — even if the prop was `'FILL'` before the move. No error; the value just stops being `'FILL'`.
@@ -302,7 +298,6 @@ verticalStack.children.forEach(fieldRow => horizontalRow.appendChild(fieldRow));
 horizontalRow.appendChild(fieldRow);
 fieldRow.layoutSizingHorizontal = 'FILL'; // mandatory, even if it was FILL before appendChild
 ```
-Verified on a production admin dashboard (List Page C) — while re-laying 26 field rows from a 1-column `VERTICAL` list into 13 `HORIZONTAL` pairs (a 2-column Main info layout). All right-hand columns drifted to x≈896 (beyond the 1152 px section) before the fix.
 
 ### layoutpositioning-auto-blocks-manual-x-assignment
 **Principle:** Direct assignment of `node.x` on a child of an auto-layout parent silently has no effect if `node.layoutPositioning === 'AUTO'` (it participates in the flow) — the engine recomputes the position by flow logic (order / itemSpacing / align) immediately, regardless of an explicit `.x` assignment in the same script. No error; the `return` value may even show the "applied" number if `.x` is read before the recomputation, but on the next inspection call the position is unchanged.
@@ -319,7 +314,6 @@ const value = await figma.getNodeByIdAsync(valueId);
 value.layoutSizingHorizontal = 'FIXED';
 value.resize(264, value.height);               // the same reserve, independent of the icon's presence in the flow
 ```
-Verified on a production admin dashboard — while fixing a 16 px rail on 3 the icon-box wrapper instances in composed Detail field row states (the donor): the value text silently grew from 264 px to 312 px right after the neighbouring icon became ABSOLUTE, reproducing exactly the "content jump" bug the reserve was meant to prevent.
 
 ### axis-spread-heuristic-misclassifies-2d-grid-as-single-row-explodes-width
 **Principle:** The heuristic "compare the children's X spread and Y spread, pick HORIZONTAL/VERTICAL by the larger" is correct only for true 1D rows/columns. On a true 2D grid (N rows × M columns, e.g. a Compare Features block — 16 feature cards 3 per row, 6 partial rows) BOTH X and Y vary across all children — the heuristic still picks ONE axis (whichever spread is larger) and lays ALL N×M children out in a single row/column. Result: the container's width/height explodes to the sum of all cells along that axis (16 cards × ~334 px ≈ 5087 px instead of the original 980 px), and HUG parents further up the tree (VERTICAL, `counterAxisSizingMode:'AUTO'`) inherit the bloated size and shift the whole section (in the observed case to x=-1758; the content visually vanished beyond the frame's viewport).
@@ -339,7 +333,6 @@ table.layoutMode = 'NONE';
 table.resize(980, 665); // original values
 for (const [id, pos] of Object.entries(originalPositions)) { const c = await figma.getNodeByIdAsync(id); c.x = pos.x; c.y = pos.y; }
 ```
-Verified on a feed-paywall-cap task (a variant frame, a template-derived paywall clone) — a batch conversion of 116 wrongly-NOT-auto-layout frames pushed a 16-card Compare table (`div.col-12`) through the simple X/Y-spread heuristic, unrolling it into a 5087 px HORIZONTAL row; in cascade "Page content" → "div.content-max-width" inherited the bloated size, and the whole payment / checkout / testimonials section left the clipped 1600×1171 frame and became invisible in the screenshot. Caught by an immediate screenshot verification step after the conversion (not a deferred one), fixed by restoring the 16 original x/y from the already-taken pre-conversion snapshot + returning layoutMode='NONE' — visually identical to the source, 0 changes outside the broken node.
 
 ### group-auto-dissolves-on-last-child-removal-remove-call-throws
 **Principle:** A Figma GROUP cannot exist without at least one child — when a programmatic "GROUP → FRAME" conversion (create a new FRAME in the group's place, move all children via `appendChild` into the new container) takes the GROUP's last child, the group **auto-deletes itself** by the same engine, before any explicit `.remove` on it.
@@ -351,7 +344,6 @@ for (const child of children) frame.appendChild(child);
 const stillThere = await figma.getNodeByIdAsync(gid);
 if (stillThere) stillThere.remove(); // the group may have self-deleted already — remove() on a missing id throws
 ```
-Verified on a feed-paywall-cap task — GROUP→FRAME conversion of two icon-composition groups (a variant frame) and two radio-button groups (a variant frame) in one session; the first attempt (unconditional `.remove`) failed with this error, the second (guarded) passed on all four groups, 3 of 4 had already self-deleted by the time of the guard check.
 
 ### counter-axis-center-with-asymmetric-padding-biases-content
 **Principle:** `counterAxisAlignItems: 'CENTER'` on an auto-layout frame centres in-flow children (TEXT/FRAME without `layoutPositioning: 'ABSOLUTE'`) relative to the area MINUS padding, not to the frame's full height/width — asymmetric `paddingTop`≠`paddingBottom` (or `paddingLeft`≠`paddingRight` for VERTICAL) gives a STABLE, not random, visual shift of the content by `|paddingBottom - paddingTop| / 2`, identical at any frame height (33 px, 50 px, 56 px — same offset). ABSOLUTE overlays (icons, cursors, hover backings) are not affected — they are positioned directly, independent of the parent's padding/alignment.
@@ -374,7 +366,6 @@ row.resize(row.width, 56); // if the height must be pinned too — resize AFTER 
 // ABSOLUTE overlays — separately, padding doesn't apply to them:
 iconBox.y = (56 - 32) / 2; // 12, the true centre by formula
 ```
-Verified on a production admin dashboard (List Page C, Detail Main info,) — 26 field rows in 13 rows showed an identical +8 px upward shift from the true centre regardless of row height (33/50/56/64 px); the source was a uniform `paddingBottom: 16` with `paddingTop: 0` on EVERY the field row. The initial (wrong) diagnosis — "forgot to centre asymmetric pairs after resize" — didn't hold: the shift was the same in ordinary, non-stretched rows too, which led to the real cause.
 
 ### space-between-single-child-centers-not-x-position
 _Same mechanism as `space-between-row-single-child-does-not-snap-to-start` above (SPACE_BETWEEN with a single child doesn't left-align; fix — `primaryAxisAlignItems='MIN'` on the parent) — a different verification session, a fuller write-up._
@@ -392,13 +383,11 @@ titleRow.primaryAxisAlignItems = 'MIN';
 // titleText.x is now truly 0
 ```
 **Important consequence:** if the same title-row pattern (title + optional secondary link) is reused on several cloned pages, and on each cloned page the secondary link is removed (irrelevant to the content) — the centring bug returns on EVERY clone separately and needs the same `primaryAxisAlignItems='MIN'` fix each time; don't expect a fix on one instance to propagate to clones made BEFORE the master pattern was fixed.
-Verified on a production admin dashboard (List Page A, Detail — Activity log tab title,/) — the "Activity log" title centred instead of left-aligning; the same bug was reproduced and fixed 3 more times when removing the "actions" satellite of the title row on new Detail tab clones (Tab A/B/C/D).
 
 ### section-node-children-use-section-relative-coordinates
 **Principle:** Children of a `SECTION` node are addressed in coordinates RELATIVE to the section's top-left corner, not in absolute canvas coordinates — contrary to the intuition that "a section is just a visual grouping on the canvas". `child.x = 48` puts the child 48 px from the section's left edge wherever the section itself sits (`section.x` can be anything). A `SECTION` is NOT auto-layout — manual `child.x`/`child.y` are set and respected (unlike an auto-layout FRAME, where a manual x is ignored — see `autolayout-child-x-assignment-orphans-node`).
 **Symptom:** assembling content inside a section by "absolute" coordinates (`child.x = section.x + PADDING`) pushes the child far to the right; relative ones (`child.x = PADDING`) land correctly.
 **Pattern:** quick convention check — for a section at `y=2100` its first child has `y≈88` (not `≈2188`) ⇒ coordinates are section-local. Position children as in an ordinary container: `child.x = PADDING; child.y = PADDING`.
-Verified on a production admin dashboard (List Page A, assembling 10 case sections with the clone-title + clone-content recipe into a grey SECTION).
 
 ### new-section-can-get-spatially-absorbed-into-existing-section
 **Principle:** `page.appendChild(newSection)` does not guarantee that the new `SECTION` stays a sibling at page level — Figma periodically recomputes SECTION membership by geometry (bounding box), not by the explicit parent from the Plugin API. If the new section's position/size (or a later growth of an existing neighbouring section) leads to a geometric overlap with an existing SECTION, the new section may end up REPARENTED inside the existing one as a child — silently, without error, despite the explicit `page.appendChild` at creation.
@@ -410,7 +399,6 @@ if (section.parent.type === 'SECTION') {
   // reparented — walk only from section.parent (or the page), not from both separately
 }
 ```
-Verified on a production admin dashboard (List Page B) — a new "target profile selection flow" section, created via `page.appendChild` and explicitly positioned outside the source cluster's bbox, nevertheless turned out to be its child; found by duplicated walk results in the next session.
 
 **Related symptom — the same geometric reshuffle moves `x`, not only `parent`.** After `resizeWithoutConstraints` on SEVERAL neighbouring top-level SECTION nodes in a row (the height of two sections out of five reduced sharply in one pass), all 5 sections of the page silently changed their order by `x` once — without a single line of code touching `x` directly; no error, no warning. Found not at the moment of the height edit but by a separate read-only call a bit later. Manually re-setting `x` to the original plan held on a repeated independent check. Looks like the same periodic geometry recompute mechanism of SECTIONs as the reparenting above, but here the effect is not a change of `parent` but a silent "tidying" of SIBLING positions at page level. Verified on a mobile chat app file — pattern: after ANY `resizeWithoutConstraints` on several sections in a row, if the relative order of sections matters (e.g. a narrative sequence of screens) — re-read `page.children.filter(n => n.type === 'SECTION')` and explicitly re-set `x` to the intended plan AFTER all resize operations; don't trust the values set at creation time.
 
@@ -418,7 +406,6 @@ Verified on a production admin dashboard (List Page B) — a new "target profile
 **Principle:** To assemble an "uncropped full-width reference" of a table that in its real form clips to the viewport — clone not the clip-container wrapper but the inner the table template itself (the VERTICAL frame whose rows are wider than it), then on the clone: `clipsContent=false` + `counterAxisSizingMode='FIXED'` + `resize(fullRowWidth, h)` (width = the rows' own width, e.g. 2328) + hide the `scrollar layout` child (`visible=false` — there is no scroll in full width). The clone's bounding box MUST become = the content width via `resize`, otherwise with `clipsContent=false` the rows visibly stick out but `node.width` stays viewport-narrow, and the section / neighbour is sized by the wrong width.
 **Symptom:** a table clone with `clipsContent=false` shows the full content, but `node.width` = 1152 (viewport) → the section under it sizes narrow; the content's right edge crosses the section boundary.
 **Pattern:** rows inside the template are usually `FIXED width=fullWidth` (assembly legacy, see `fixed-sizing-row-frame-does-not-shrink-after-child-deletion`); the template itself is often `counterAxisSizingMode=FIXED` at viewport width + `clipsContent=true`. The clip on the template clone comes off easily (the wrapper parent isn't in the clone), after which `resize(template, fullWidth)` shows the rows in full.
-Verified on a production admin dashboard (List Page A, Case 10 — a 14-column 2328 px Attachments table under the clipped 1152 version; template).
 
 ### new-instance-in-autolayout-defaults-to-auto-positioning
 **Principle:** `masterComponent.createInstance` inside an auto-layout parent creates the instance with `layoutPositioning='AUTO'` by default — a direct `x`/`y` assignment RIGHT AFTER `appendChild` is silently ignored (the parent recomputes the position by auto-layout flow on every render). This differs from cloning an EXISTING instance of the same component (e.g. from a donor page) — if the original's `layoutPositioning` was already `ABSOLUTE` (typical "floating" component behaviour), the clone inherits that value and manual x/y works at once.
@@ -432,13 +419,11 @@ actionBar.x = 24; actionBar.y = 626; // ❌ ignored — mainContent is auto-layo
 actionBar.layoutPositioning = 'ABSOLUTE'; // ✅ this first
 actionBar.x = 24; actionBar.y = 626; // now applies and stays
 ```
-Verified on a production admin dashboard (List Page D, bulk-selection action bar, component `Actions=3, Behavior=Floating block`, `mainContent.layoutMode='VERTICAL'`).
 
 ### insertchild-reorder-index-relative-to-current-state-not-original
 **Principle:** `autoLayoutFrame.insertChild(index, existingChild)`, when reordering SEVERAL children over several consecutive calls, counts `index` from the CURRENT state of the children array at the moment of each call, not from the original (pre-reorder) state — planning final indices "on paper" from the original list and blindly applying them as a series of calls gives the wrong order once one `insertChild` has already shifted the other elements.
 **Symptom:** after a series of `insertChild` calls the final order doesn't match the expectation — e.g. two elements that should have been separated by a divider end up adjacent, and the divider "disappears" from the middle (it actually just moved to another position).
 **Pattern:** after each `insertChild` — re-read `parent.children.map(c => c.id)`; don't rely on indices computed before the first call of the series. For a 2-element swap ONE `insertChild` with a recomputed (not original) index of the second element is usually enough.
-Verified on a production admin dashboard (List Page D, List — Filters open, trimming a donor modal from 9 to 4 fields — reordering `FieldA` / `Attachment select` took 2 `insertChild` passes; the first gave `[Device, div, FieldA, Attachment, div, div, Type]` instead of the target `[Device, div, FieldA, div, Attachment, div, Type]`).
 
 ### primaryaxis-vs-counteraxis-sizing-mode-depends-on-parent-layoutmode-direction
 **Principle:** `primaryAxisSizingMode` controls the size along the container's MAIN axis (for `layoutMode='HORIZONTAL'` — width, for `'VERTICAL'` — height); `counterAxisSizingMode` — along the CROSS axis (for `HORIZONTAL` — height, for `VERTICAL` — width). The rule applies at EVERY hierarchy level INDEPENDENTLY — if a child ROW frame is `HORIZONTAL` and the parent TABLE frame is `VERTICAL`, then "width" for one is controlled by `primaryAxisSizingMode` and for the other by `counterAxisSizingMode`, ALTHOUGH visually it's the same horizontal width down the whole column of frames. Setting `primaryAxisSizingMode='AUTO'` on the child ROWs (correct for HORIZONTAL — wants auto width) does NOT hug the parent VERTICAL TABLE to their width — the TABLE's width is governed by its OWN `counterAxisSizingMode`, which stays as it was (usually `FIXED` at a stale value), and the parent's `.width` keeps showing the old number even when all visible children have already recomputed to the new width.
@@ -453,13 +438,11 @@ for (const row of table.children) row.primaryAxisSizingMode = 'AUTO'; // row.lay
 table.counterAxisSizingMode = 'AUTO'; // VERTICAL parent — width = counter axis
 // table.width is now correctly = max(children width) = 5000
 ```
-Verified (a second pass in the same session) on a production admin dashboard (List Page D section) — exactly this cause was behind the "overhang" the user noticed on 2 of 3 table copies AFTER the per-row width had been fixed (see `table-header-cell-column-width-mismatch` above — that fix was incomplete precisely because of this axis-mapping nuance, not a separate new cause).
 
 ### hardcoded-resize-height-drifts-from-hug-as-content-changes
 **Principle:** When a donor container (e.g. a modal template) is auto-layout with `HUG` height, and the clone/adaptation sets an explicit `resize(w, h)` to a "hand-computed" height (the sum of known child heights at build time) — that number goes stale immediately on any later content change (text grew and wrapped to 2 lines, a child was added/removed), because `resize` switches the container's `primaryAxisSizingMode` / `layoutSizingVertical` to `FIXED`, decoupling the height from the content. The same pattern hits not only the modal root but ANY wrapper around auto-layout content (e.g. a wrapper around a table + action bar) if the wrapper's height was set by hand rather than inherited via `HUG` from the `HUG` content inside.
 **Symptom:** content is clipped at the bottom/top edge (with `primaryAxisAlignItems=CENTER` — symmetrically at both edges) for no visible reason; to the eye it's "just cramped", although every child looks fine on its own. Not caught by static code review — visible only on a screenshot of the real assembled state.
 **Pattern:** default — auto-layout + `HUG` along the whole container chain where applicable; do NOT compute height by hand and don't call `resize` for it. If the container is already auto-layout and `resize` accidentally pinned it — roll back: `container.primaryAxisSizingMode = 'AUTO'` (or `layoutSizingVertical = 'HUG'` in the child context) instead of recomputing the sum again. Check after cloning a template — compare the clone's `primaryAxisSizingMode` / `layoutSizingVertical` WITH THE ORIGINAL; don't rely on visual similarity.
-Verified twice in one session on a production admin dashboard (List Page A): (1) an Attach modal in Attachments — `resize` to 268 px by the template header's old number (80 px, single-line subtitle) instead of the real 100 px (two-line subtitle) — 20 px lost at both edges; (2) the the outer layout wrapper wrapper around table + action bar — the owner manually corrected it to auto-layout; it had been fixed-height, which cropped the table. The second case was a direct request from the owner to remember the pattern for the future.
 
 ### fixed-width-row-badge-overflows-append-as-flow-sibling-use-fill-plus-absolute-overlay
 **Principle:** When a design component (e.g. a reusable DS row with a fixed native width, say 256 px) must go into a card container of FIXED width (e.g. 300 px) TOGETHER with an extra small element (badge/icon), appending the badge as a HORIZONTAL flow sibling next to the row (`rowCard.appendChild(rowInstance); rowCard.appendChild(badgeInstance);`) visually overflows the container if `padding + rowWidth + itemSpacing + badgeWidth > cardWidth` — HORIZONTAL auto-layout does NOT shrink/clip children with `primaryAxisSizingMode='FIXED'`; the excess content simply renders BEYOND the card's visible edge (cut off by the next layout neighbour, looks like a "partially vanished" badge). The working pattern (confirmed on a real reference in the same file — D6 the entity-trigger row component with badge/kebab): stretch the row with `rowInstance.layoutSizingHorizontal = 'FILL'` (using the WHOLE card budget minus padding), and make the badge/icon `layoutPositioning='ABSOLUTE'` inside the same rowCard, positioned into the freed "empty" space to the right of the row content (`x = paddingLeft + rowInstance.width - overlay.width - marginRight`). The DS component's inner auto-layout, when stretched, keeps its content (avatar + text) left-anchored rather than stretching it — the block on the right stays empty and safely takes the overlay.
@@ -477,7 +460,6 @@ trigger.setProperties({ Size: 'Desktop' }); // componentProperties change, .widt
 // ✅ resize the FIXED parent directly — the FILL child stretches automatically
 rowCard.resize(362, rowCard.height); // was 338; trigger.width jumped from 184 to 208 without a separate mutation
 ```
-Verified on a component library file (an internal popover-refinement task) — the design spec expected that changing the `Size` variant of `.NavigationBar / EntityTrigger` would itself widen the header row card (a HUG assumption); the live structure turned out to be `row-card: FIXED 338px` + `trigger: FILL` — growth happened only after a direct `resize` of the row card.
 ```js
 const rowInstance = variant.createInstance();
 rowCard.appendChild(rowInstance);
@@ -492,7 +474,6 @@ const contentRight = rowCard.paddingLeft + rowInstance.width;
 badgeInstance.x = contentRight - badgeInstance.width - 8; // overlay in the row's empty tail
 badgeInstance.y = rowCard.paddingTop + 8;
 ```
-Verified on a component library file (a component cluster, a states catalogue) — Block 1 "Primary" cells: the first attempt (badge as a flow sibling) overflowed the 300 px card by ~70 px (12+256+8+82+12=370); the badge rendered cut off beyond the card's edge; fix — FILL+ABSOLUTE, reproducing exactly the already-working D6 pattern of the same file.
 
 **Important correction (same file, the redesign session right after):** FILL+ABSOLUTE above is a workaround, not the only solution. The component that "overflowed" above turned out to be a FULL auto-layout component (not hard 256 px) — a direct `topLevelInstance.layoutSizingHorizontal='FIXED'; topLevelInstance.resize(narrowerWidth, height)` on the INSTANCE itself (not its parent) correctly cascaded all nested FILL children (Master→Container→username) down to at least 176 px without a single error. If the task is a genuine flow-based accessory (not an overlay but a real width neighbour) — first check whether the component instance resizes on its own (a scratch test instance, `layoutSizingHorizontal='FIXED'` + `resize`, read the nested children's `.width`) — if yes, ABSOLUTE isn't needed at all: build `[instance(FILL)] [accessory(FIXED)]` as ordinary HORIZONTAL siblings. The ABSOLUTE pattern above remains the right solution only when the instance REALLY doesn't resize (hard HUG without an inner FILL cascade).
 ```js
@@ -504,7 +485,6 @@ scratch.resize(narrowerWidth, scratch.height);
 const stillOk = scratch.width === narrowerWidth; // true → the component is resizable, ABSOLUTE not needed
 scratch.remove();
 ```
-Verified on a component library file (a component cluster, a row redesign, planning) — the entity-trigger row component (the same component as above) shrank successfully from its native 256 px to 176 px via a direct resize on the top-level instance; the cascade reached the `username` text (`layoutSizingHorizontal='FILL'`) without a single mutation inside the protected instance subtree.
 
 ### clone-fill-collapses-in-hug-parent
 
@@ -518,7 +498,6 @@ cell.appendChild(clone);                   // cell — VERTICAL, HUG on both axe
 clone.layoutSizingHorizontal = 'FIXED';
 clone.resize(338, clone.height);           // ✅ restore the original width explicitly
 ```
-Verified on a component library file (a component cluster, a states catalogue) — clones of a live row card from a popup (, originally FILL against the the scroll container scroll container) collapsed to ~85 px inside the new VERTICAL catalogue cells until an explicit FIXED+resize was applied right after each append.
 
 ### autolayout-manual-xy-silently-ignored-order-controls-position
 
@@ -535,7 +514,6 @@ row.insertChild(1, shellB);
 row.insertChild(2, shellC);
 const verifiedX = row.children.map(c => c.x); // read AFTER the reorder; don't trust .x from before
 ```
-Verified on a component library file (a component cluster, merging Shells A–C with D–I into one matrix) — the shells row turned out to be `layoutMode:'HORIZONTAL', itemSpacing:40` (not explicitly known in advance — the `-row` name in this file is itself an auto-layout signal, see also a row container in the a states catalogue). Three `appendChild` + manual `.x=i*478` gave the visible order D,E,F,G,H,I,A,B,C instead of the expected A–I; fix — three `insertChild(0/1/2, …)`; order and `.x` recomputed correctly without further intervention.
 
 ### section-resize-must-use-local-not-page-absolute-coordinates
 
@@ -550,7 +528,6 @@ const sectionW = (wrap3.x + wrap3.width + 60) - section.x;  // 2140+940+60-15356
 const sectionW = wrap3.x + wrap3.width + 60;                 // 2140+940+60 = 3140, correct
 section.resizeWithoutConstraints(sectionW, sectionH);
 ```
-Verified on a component library file (a component cluster, Scenario 10 "Internal Transfer under a sub-account") — the section was created at page-absolute x=15356 (next in the row after 9 existing scenarios); three wrapper frames were placed into it with local x from 60 to 2140; the first `resizeWithoutConstraints` attempt failed at once on a negative width; the script rolled back atomically (nothing was created) — the fix removed `section.x` from the formula entirely.
 
 ### clone-into-plain-frame-with-scale-constraints-distorts-on-resize
 
@@ -569,14 +546,12 @@ cell.appendChild(iconClone);
 iconClone.constraints = { horizontal: 'MIN', vertical: 'MIN' };
 cell.resize(100, 24);                      // the child no longer scales with the parent
 ```
-Verified on a production admin dashboard (List Page D detail "Operation history", a compact embedded table) — 2 an x-circle icon instances (the AUTO-TRANSFER column) squashed to 24×5.76 after `cell.resize(widths[i], icon.height)` on a newborn `createFrame`; caught by screenshot (icons rendered as red "pills" instead of circles), fixed post-hoc by resetting constraints + an explicit `resize(24,24)` on both instances.
 
 ### clone-then-extract-child-leaves-orphaned-wrapper-at-page-level
 
 **Principle:** The pattern `const wrapper = donor.clone; const child = wrapper.children.find(...); targetParent.appendChild(child);` moves only `child` INTO targetParent, while the `wrapper` ITSELF (already separated from `child` after the `appendChild`, which physically detaches the moved node) stays hanging as a separate top-level node on the current page (see the related core rule `clone-reparents-to-currentpage-if-source-not-on-currentpage` in SKILL.md — this also covers the fact that `wrapper` was never explicitly removed).
 **Symptom:** a page-wide collision check suddenly shows N extra top-level nodes named after the donor (e.g. the content-body wrapper) that weren't in the page plan — usually located near (0,0) or wherever `figma.currentPage` was at clone time; visually an empty frame with one orphaned text node (e.g. the donor's section heading, left without its original body).
 **Pattern:** either (a) don't clone the whole `donor` if only one of its children is needed — clone THE needed child directly (`donor.children.find(...).clone`), or (b) after extracting the needed child from `wrapper.clone` explicitly call `wrapper.remove`. The final page-wide collision check before screenshot QA (already a mandatory item of the guardrail checklist) catches these orphans — provided it runs AFTER all clone-and-extract operations, not only after the main assembly.
-Verified on a production admin dashboard (four different subsections — 4 separate cases in one pass) — each time `donor.clone.children.find(c => c.name === 'Fields — Main information')` left an empty the content-body wrapper wrapper with a single orphaned heading at page level; all 4 were found by a single page-wide collision check at the end of the build and removed at once.
 
 ### counteraxis-hug-then-child-fill-collapses-single-child-frame
 
@@ -597,7 +572,6 @@ bubble.primaryAxisSizingMode = 'AUTO';   // HUG on height only; width stays FIXE
 bubble.appendChild(text);
 text.layoutSizingHorizontal = 'FILL';    // now FILL fills a real FIXED parent
 ```
-Verified on a production admin dashboard (a row-level post-hoc tooltip demo) — 2 independent tooltip bubbles (two admin-panel sections) both collapsed identically (height:1, width 559/513); the fix restored the expected 280×61.
 
 ### patternpaint-type-exists-in-dts-but-runtime-rejects-it
 **Principle:** `PatternPaint` (`{type:'PATTERN', sourceNodeId, tileType, scalingFactor, spacing, horizontalAlignment}`) exists as a full interface in `plugin-api-standalone.d.ts` (Figma documented pattern fills in the Plugin API), but assigning `node.fills = [{type:'PATTERN',...}]` in the `use_figma` runtime fails validation — the `PATTERN` type is missing from the actually accepted discriminator list.
@@ -623,13 +597,11 @@ for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
 }
 tile.remove(); // the master tile is no longer needed after cloning unless reuse is planned
 ```
-Verified on a product concept file — the metric-bar row component component set, `Kind=edge` variant (45° hatching for the "edge" bin of a histogram).
 
 ### tests-frame-needs-own-bg-fill-bound-to-semantic-for-dark-mode-visibility
 **Principle:** A Tests block (light/dark) must have ITS OWN fill bound to `fill/bg/primary` (or an equivalent mode-dependent bg token) — if the frame is left transparent/white and relies only on child text/icons flipping colour by mode, `setExplicitVariableModeForCollection(..., darkModeId)` on the frame itself creates no visible dark background, and the light-themed text nodes (switched to a light colour by the dark mode) render almost invisible on Figma's default white canvas.
 **Symptom:** the Tests Dark screenshot shows barely visible grey text on a white/light background instead of the expected light text on a dark background — while the component itself inside (not the Tests wrapper) switches correctly.
 **Pattern:** before pinning the mode — `frame.fills = [boundToVariable(bgPrimaryVar)]` on the Tests CONTAINER itself, not only on child nodes. Check a neighbouring component's reference (`await figma.getNodeByIdAsync(knownGoodTestsId)`) — `fills[0].boundVariables` almost certainly points at `fill/bg/primary`.
-Verified on a product concept file — the the filter-query summary Tests block initially had no background fill; the Dark copy rendered unreadable until a `fill/bg/primary` binding was added on the Tests frame itself.
 
 ### counteraxissizingmode-silent-auto-collapses-hug-width-below-fixed-children
 **Principle:** An auto-layout frame (`layoutMode='VERTICAL'`) whose `counterAxisSizingMode` is unexpectedly `'AUTO'` (not `'FIXED'` as designed) hugs its width not "sensibly to the widest visible child" but may give a value substantially SMALLER than the width of deeply nested FIXED-width nodes further down the tree (e.g. `header row` / `body list` pinned at 394 px while the frame collapses to 209 px) — nested FILL chains without a defined parent width resolve to their minimal intrinsic size, not to the widest descendant.
@@ -641,7 +613,6 @@ broken.counterAxisSizingMode = 'FIXED';
 broken.resize(426, broken.height);         // the reference width
 broken.primaryAxisSizingMode = 'AUTO';     // re-set HUG height AFTER resize (resize resets both axes to FIXED)
 ```
-Verified on a production admin dashboard (Attachments mirror,) — the root frame collapsed to 209 px instead of 426 px (reference — the neighbouring); cause not established (probably a side effect of an earlier resize); fix — 3 lines, restored the whole inner chain in cascade without manual edits on 6+ nested nodes.
 
 ### manual-fixed-gap-row-reflow-after-resizing-one-item
 **Principle:** When several nodes form a "row" through MANUAL positioning (same Y, each next X = previous X + width + a fixed gap) — NOT auto-layout — changing the width of ONE element doesn't move the neighbours automatically (unlike auto-layout, where itemSpacing keeps the gap by itself). An explicit reflow of all elements AFTER the changed one is needed.
@@ -656,7 +627,6 @@ for (const item of items) {
   runningX += item.width + GAP;
 }
 ```
-Verified on a production admin dashboard (a card-header cascade) — widening 2 of 12 frames in the row (426→966 px, for a side-by-side toast layout) shifted a real collision onto the 3 following frames; reflowing all 12 with the formula above + `resizeWithoutConstraints` of the section from 6412 to 8032 px for the new `maxRight` removed both collisions without hand-picking coordinates.
 
 ### instance-sublayer-in-none-layout-parent-blocks-resize-and-x-y-override-detach-first
 **Principle:** A child inside a LIVE INSTANCE (not the master), when that child's parent is an ordinary FRAME with `layoutMode='NONE'` (not auto-layout), does NOT allow overriding `resize` (width/height) or direct `x`/`y` assignment — Figma treats such a child's geometry as "structural", bound to the master, and gives no per-instance override in a NONE-layout context. `resizeWithoutConstraints` doesn't help either — both methods **silently don't apply the change** (the value stays, no error), whereas a direct `node.x = N` **explicitly throws** `Error: in set_x: This property cannot be overridden in an instance` — the same block, just with different behaviour per setter (resize is a silent no-op, x/y throws). Other mutations on the same node (rename, opacity) apply normally — the block is specific to geometry (position/size), not to the node as a whole.
@@ -668,7 +638,6 @@ const detached = row.detachInstance();               // converts THIS node into 
 const fill = detached.findOne(n => n.name === 'Fill');
 fill.resize(targetWidth, fill.height);                // now applies for real
 ```
-Verified on a product concept file, a MetricBarRow "Fill" bar inside `Track` (`layoutMode='NONE'`) — 3 of 5 histogram rows (`Kind=in`, different bins) shared ONE master variant and therefore one canonical Fill width (164 px = the width of the maximal bin), so all "middle" bins rendered at the same width as the maximal one (a real bug, not just "not designed" — visible in comparison with a screenshot of the production version, where the widths really differ). Detach + resize on 3 rows **inside the shared master component "Histogram"** (not in each of the 3 embedding places — the range panel component, both themes of the search-settings sheet composition) — all 6 downstream copies picked up the new width automatically, confirmed by reading the new IDs (`I<embeddingId>;<newFrameId>`, pattern `4267:xx`) in each of the three places.
 
 **Continuation — an unhandled throw somewhere AFTER this rule in the same script rolls back the edits already applied successfully BEFORE it.** Real case: a script looping over 2 items created + positioned a scrollbar instance (`appendChild` + `resize` + `x`/`y` on the TOP-level instance — all passed without errors), then tried resize/x/y on a NESTED instance sublayer (the thumb) WITHOUT detach — a silent no-op on resize, then an explicit throw on `x =` (this very rule) on the first loop iteration, which cut the script before the second iteration. Expectedly the 2nd item is untouched — UNEXPECTEDLY, on the next read the node created BEFORE the throw on the 1st iteration (the top-level scrollbar instance, already appended and positioned without a single error) **was also missing** from the tree. It seems the whole `use_figma` call with an unhandled exception rolls back entirely (as a single undo transaction), rather than committing everything that ran before the offending line.
 **Practical consequence:** you cannot rely on "this mutation definitely applied because the script reached it without error" — if the SCRIPT AS A WHOLE later fails on a later line, the earlier executed (non-throwing) mutations of the same call may be undone with it. Wrap the risky operation (a non-standard nested INSTANCE, an untested API) in `try/catch` — or make it the FIRST/only operation in the call — so a failure doesn't erase useful work done alongside.
@@ -688,7 +657,6 @@ root.appendChild(dropdown); // a DIRECT child of the root, not content layout �
 dropdown.layoutPositioning = 'ABSOLUTE';
 dropdown.x = selectRelX; dropdown.y = selectRelY + selectHeight + 8; // right under the field; coordinates relative to the root
 ```
-Verified on a production admin dashboard (a row-level Bind/Move — entity profile selection) — a reference donor of exactly this structure already existed in the file (, the bulk pattern) and was cloned/adapted directly rather than reconstructed from scratch: the same header/footer trick, the same pattern for the dropdown as a direct child of the root.
 
 ### clone-reparent-into-fresh-hug-frame-inherits-fill-sizing-shrinks-to-first-sibling-width
 **Principle:** `sourceInstance.clone`, if the source node had `layoutSizingHorizontal='FILL'` in ITS original auto-layout parent (e.g. a 400 px column), keeps `FILL` when cloned. If the clone is then added (`appendChild`) to a NEW auto-layout FRAME with `counterAxisSizingMode='AUTO'` (HUG) that already has another child at that point (e.g. a short caption TEXT ~180 px, added first) — FILL makes the clone stretch/shrink to the parent's CURRENT hug width at layout time (~180 px), not to its own "natural" width (400 px), and the parent does NOT recompute its hug width upward to the maximum among children as intuition would expect.
@@ -701,7 +669,6 @@ wrapper.appendChild(clone); // wrapper already holds a ~180 px caption; HUG hasn
 clone.layoutSizingHorizontal = 'FIXED';
 clone.resize(sourceWidth, clone.height); // force the right width explicitly; don't rely on auto
 ```
-Verified on a product concept file, a a states section / RangePanel empty case — a clone of a RangePanel instance (originally 400 px in a Tests block) shrank to 180 px when added to a freshly created HUG wrapper with a caption TEXT as the first child; an explicit `resize(400, …)` after `FIXED` restored the correct width.
 
 ### group-children-xy-relative-to-groups-parent-not-group-itself
 **Principle:** A `GROUP` node (unlike a `FRAME`) has no coordinate origin of its own — the group's children's `.x`/`.y` are reported by the API in the coordinate system of the GROUP'S PARENT, not of the group itself, although the group also reports its `.x`/`.y` in that same parent system (i.e. the group and its children share one coordinate base — the group's parent). Moving a child from a GROUP into a new FRAME ("group-to-frame" conversion) with a naive `child.x = childXBeforeMove` (no correction) puts the child where it would be if the FRAME itself were transparent at 0×0 — i.e. shifted sideways by the original group.x/group.y.
@@ -716,7 +683,6 @@ const childSnapshots = group.children.map(c => ({ node: c, cx: c.x, cy: c.y }));
 const localX = group.x, localY = group.y;
 const childSnapshots = group.children.map(c => ({ node: c, cx: c.x - localX, cy: c.y - localY }));
 ```
-Verified on a finance-domain app file (a Clean UI tokenisation) — 2 nodes (a logout button `Group 350` inside a User Panel, an icon placeholder inside the quick-action panel) were broken by a naive group-to-frame port from an external layer-cleaner plugin (the same `cx=c.x` pattern without subtraction); caught by screenshot verification right after the batch conversion, fixed by delete + re-clone from an untouched reference + a repeat conversion with the subtraction — drift from ~300 px / 42 px to ~0 px on all 6 related nodes. Separately: an empty GROUP is auto-deleted by Figma after the last child is moved out — a repeat explicit `group.remove` throws `"does not exist"`; a guard `if (!group.removed) group.remove` is needed.
 
 ### spacing-merge-additive-padding-not-validated-against-childs-own-sizing
 **Principle:** A `spacingMerge` port (collapsing a single-child "spacing" wrapper — adding the wrapper's padding to the child's padding under the additive-transfer strategy for an auto-layout child) returns `transferred:true` as the only success signal, but does NOT check the result against the child's actual geometry/sizing mode. If the child stays `layoutSizingHorizontal/Vertical = 'FIXED'` (not HUG) — the summed padding is applied to a box whose size does NOT change, and may yield structurally contradictory values (the padding along one axis in total LARGER than the box's size along that axis). If the child is `FILL` in the context of the ORIGINAL (narrower) parent — once the wrapper is removed and the child occupies its slot in a WIDER grandparent, `FILL` makes it stretch to the new (wider) width, losing the intended side margins the wrapper used to provide.
@@ -731,13 +697,11 @@ if ((c.paddingTop||0) + (c.paddingBottom||0) > c.height || (c.paddingLeft||0) + 
 }
 // if the child is FILL — compare with siblings in the NEW parent for the shared convention (all FILL+padding, or all FIXED+width)
 ```
-Verified on a finance-domain app file (Clean UI) — the user found contradictory padding on a modal's CTA button (74 px top+bottom at a 60 px box height, hidden by `CENTER` alignment); a systematic check of the other 7 spacing-merge nodes against an untouched reference section found 1 more real defect (the modal's search field lost its 15 px side margins; `FILL` stretched it to the new parent's full width) — 5 of 8 nodes were unaffected (a `FIXED`-size child with correct final padding).
 
 ### section-clone-may-reverse-children-array-order
 **Principle:** `SECTION.clone` copies all child FRAME/INSTANCE nodes with their relative positions (`x`/`y` inside the section) correctly, but does NOT guarantee the same order in the resulting `clone.children` array as in the original — the visual left-to-right / top-to-bottom order (by `x`/`y`) may stay the same while the TRAVERSAL order (`clone.children[0]`, `[1]`, …) turns out reversed relative to the original `appendChild` order.
 **Symptom:** a destructuring like `const [f1, f2] = clone.children` and subsequent naming/labelling by that order (`f1.name = 'A'`, `f2.name = 'B'`) yields a node NAMED "A" physically standing where node "B" stood before (and in the original) — a name↔content mismatch not caught by a position/geometry check (that stays correct), only by explicitly reading each node's content (text/structure) after the rename.
 **Pattern:** after cloning a SECTION with several children — don't rely on the `children` index to identify "which node this is"; verify by content (e.g. `findAll(n => n.type==='TEXT').map(t=>t.characters)`) BEFORE renaming/annotating, or rename after the fact based on the content read, not on a pre-chosen order.
-Verified on a finance-domain app file (a pixel-perfect section) — a clone of a section with 2 frames (Not found / Searching) gave `clone.children` in the reverse order of the original; the `[f1,f2]` destructuring named the frame physically containing the "Searching for record" text "Not found" (and vice versa) — caught by reading the text nodes right after cloning, before writing Dev Mode annotations (otherwise the annotations would have landed on the wrong nodes too).
 
 ### page-merge-recipe-reparent-then-set-section-xy-no-child-math-needed
 **Principle:** Merging N SECTION nodes from one page onto another (combining two Figma pages into one) requires no coordinate recomputation for any descendant — the combination of two already documented facts (`cross-page-appendchild-moves-node` in SKILL.md: `targetPage.appendChild(section)` moves a section between pages directly by ID; `section-node-children-use-section-relative-coordinates` above: a section's children's coordinates are section-local, not page-absolute) gives a ready "one line per section" recipe: `targetPage.appendChild(section); section.x = newX; section.y = newY;` — setting `section.x`/`section.y` after the move shifts ALL the section's descendants in cascade (their local coordinates are untouched; page-absolute is recomputed automatically by transform composition). Works identically for sections already on the target page (just reposition, no reparent) and for those moved from another page.
@@ -749,7 +713,6 @@ const section = await figma.getNodeByIdAsync(sectionIdFromOtherPage);
 targetPage.appendChild(section);   // reparent — section.parent is now targetPage
 section.x = newX; section.y = newY; // shifts ALL descendants in cascade; don't touch their (section-relative) x/y at all
 ```
-Verified on a finance-domain app file — merging 2 pages (3+3 SECTIONs) into one: 3 sections moved from the other page + repositioned, 3 native sections only repositioned — one `use_figma` call, 0 edits at child level; screenshot verification confirmed no visual regressions (no clipped content, nothing lost in the reparent).
 
 ### section-resizewithoutconstraints-growth-can-collide-with-unrelated-page-siblings
 **Principle:** `SECTION.resizeWithoutConstraints(w, h)` to fit new/moved children is checked for collisions only against the section's OWN children (an internal pairwise bbox check) — but the very growth of the section's bounding box can geometrically overlap COMPLETELY UNRELATED nodes on the same page (other sections/frames from earlier sessions unrelated to the current task) that are not children of this section and therefore take no part in the internal check at all. This is a separate failure mode from `page-children-bbox-collision-check` (that one is about positioning NEW top-level nodes) and from `new-section-can-get-spatially-absorbed-into-existing-section` (that one is about reparenting a NEW section into an existing one) — here the section remains a normal top-level child of the PAGE, no reparenting happens; the problem is purely visual/geometric.
@@ -767,7 +730,6 @@ for (const n of page.children) {
   if (overlaps(sectionBox, b)) externalCollisions.push({ name: n.name, id: n.id });
 }
 ```
-Verified on a finance-domain app file (record-search-filter) — the first attempt to grow the section (height 2738→3542, to fit a new row UNDER the old one) was internally collision-free (0 internal collisions among `section.children`) but hit `Searching — pixel-perfect` — a frame from a completely different, earlier-built section of the same page (`Pixel-perfect — 1:1 with code`), spotted by the user visually on the final screenshot, not caught by the internal check. Fix — growth only along the axis (width) for which a preliminary page-wide scan confirmed no neighbours at any Y.
 
 ### align-icon-to-multiline-text-sibling-top-via-fill-height-padding-wrapper
 **Principle:** In a HORIZONTAL auto-layout, [a multi-line text block with its own `paddingTop`] sits next to [a fixed-size icon] — the icon must sit "on the grid", its top edge level with the FIRST line of text, not centred on the whole block (which "floats" below the title's baseline with two-line text). No need to compute the offset by hand as a number. Solution: wrap the icon in a HORIZONTAL frame with `layoutSizingVertical='FILL'` (stretches to the parent's full height, automatically adapting to the neighbouring text block's HUG height) and **the very same `paddingTop` token** as the text block — the padding shifts the icon down by exactly as much as the first line of text is already shifted by the block's internal paddingTop; both top edges coincide automatically without magic numbers and stay in sync if the padding token ever changes.
@@ -786,7 +748,6 @@ wrapper.layoutSizingVertical = 'FILL';            // height — stretches with t
 headerRow.counterAxisAlignItems = 'MIN';
 ```
 **Why not just `counterAxisAlignItems='CENTER'` on the parent:** centring places the icon at the centre of the WHOLE text block (title + subtitle); fine for a single-line title without a caption, but doesn't read as "aligned to the grid" with multi-line text.
-Verified on a finance-domain app file — 6 bottom-sheet headers (Title + Subtitle on the left, Close on the right); the pattern was found and first applied by the user manually in Figma on one sheet, then replicated to the other 5.
 
 ### empty-group-auto-dissolves-explicit-remove-throws-not-found
 _Same mechanism as `group-auto-dissolves-on-last-child-removal-remove-call-throws` above (a GROUP self-deletes on losing its last child; guard before remove) — a different session (a finance-domain app file, 9 GROUP→FRAME conversions)._
@@ -806,7 +767,6 @@ const kids = [...group.children];
 kids.forEach(k => newFrame.appendChild(k));
 // the group is already gone by itself — (await figma.getNodeByIdAsync(groupId)) === null
 ```
-Verified on a finance-domain app file (an "Event history" Clean UI conversion) — 9 GROUP→FRAME migrations (4 icon badges, 4 status texts, 1 search row) in one script; the first attempt with an explicit `group.remove` after moving the children failed on the very first group; fix — drop the explicit remove for all 9.
 
 ### enabling-layoutmode-on-populated-frame-hug-shrinks-despite-later-fixed-mode
 **Principle:** Enabling auto-layout (`frame.layoutMode = 'HORIZONTAL'|'VERTICAL'`) on an already EXISTING plain FRAME that already has at least one child (added BEFORE enabling layoutMode) immediately recomputes the frame's size to its content (HUG-like behaviour) — this happens AT ONCE at the moment `layoutMode` is assigned, BEFORE the script manages to set `primaryAxisSizingMode = 'FIXED'` on the next line. The subsequent `'FIXED'` merely FREEZES the already-shrunk size — it doesn't restore the frame's original (pre-layoutMode) size.
@@ -822,7 +782,6 @@ badge.primaryAxisSizingMode = 'FIXED';     // only freezes the ALREADY shrunk wi
 badge.counterAxisSizingMode = 'FIXED';
 badge.resize(40, 40);       // ✅ mandatory repeat resize AFTER the layout setup — the only way back to 40
 ```
-Verified on a finance-domain app file (an "Event history" Clean UI conversion) — 4 status-icon badges (40×40, a 24×24 icon child) all collapsed to a width of 24 on the first build; caught by checking `badge.width` right after the script (not by screenshot — 24 vs 40 in a 40×40 badge is hard to see by eye), fixed by a repeat `resize(40,40)` on all 4 in a separate call.
 
 ### fixed-height-autolayout-with-clip-hides-extra-children-silently
 **Principle:** An auto-layout frame with `primaryAxisSizingMode='FIXED'` and `clipsContent=true` **doesn't grow** when children are added: the extra children exist in the tree and take part in the layout, but are clipped and not drawn. A tree walk and `children.length` don't show it — the discrepancy is visible only on the render.
@@ -833,7 +792,6 @@ const need = wrap.children.length * ITEM_H + (wrap.children.length - 1) * wrap.i
            + wrap.paddingTop + wrap.paddingBottom;
 if (wrap.height + 0.5 < need) { wrap.primaryAxisSizingMode = 'AUTO'; wrap.layoutSizingVertical = 'HUG'; }
 ```
-Verified on a production admin dashboard — building a the sidebar component component: the the nav-items wrapper wrapper was FIXED 240×432 for exactly 11 items; the added 12th and 13th were clipped silently.
 
 ### absolute-child-constraint-min-detaches-from-bottom-when-autolayout-parent-grows
 **Principle:** A child with `layoutPositioning='ABSOLUTE'` inside an auto-layout parent is positioned by `constraints`, not by the flow. If it has `constraints.vertical='MIN'` (pinned to the top) and a hard-set `y`, then when the parent GROWS in height (e.g. a HUG frame grew because the text inside wrapped to a second line) the overlay stays at the old `y` and "detaches" from the bottom edge — visually driving into the content. While the parent's height doesn't change the defect sleeps: on the donor and on clones with short text everything looks right.
@@ -849,7 +807,6 @@ for (const t of toasts) {
   if (t.height - (b.y + b.height) !== 0) throw new Error('overlay detached from the bottom: ' + t.name);
 }
 ```
-Verified on a finance-domain app file (an "Item Lifecycle — Workspace" page) — a toast clone with a two-line description grew 68→88 px; the progress bar stayed at `y=65` (`vertical:'MIN'`) and struck through the second line; on two neighbouring toasts with a one-line description the same constraint caused no defect.
 
 ### vector-resize-after-setvectornetwork-distorts-non-square-geometry
 **Principle:** `vector.resize(w, h)` called AFTER `setVectorNetworkAsync` on hand-built geometry with a non-square natural bbox (e.g. a path wider than tall — 12×6) may not just scale the points proportionally but visually rotate the shape by 90° — while the `vectorNetwork.vertices` read back CORRECTLY correspond to a proportional scale arithmetically (in the observed case the local points (4,7)/(10,13)/(16,7) with a 12×6 bbox correctly recomputed to (0,0)/(10,20)/(20,0) with a 20×20 bbox — the numbers are right), yet the render shows not a "V" but a "<" — i.e. the bug is not in the data but in the render pipeline after resizing a non-proportional network.
@@ -863,7 +820,6 @@ v.resize(20, 20); // may visually rotate the shape 90°, although vertices read 
 // ✅ straight in target coordinates inside the desired bbox — no resize needed
 await v.setVectorNetworkAsync({ vertices: [{x:4,y:7},{x:10,y:13},{x:16,y:7}], segments: [...] }); // already 12×6, final scale
 ```
-Verified on a profile-detail paywall screen (Mobile Web) — a hand-made down-chevron for a "more" trigger rendered as "<" three times in a row (first with `.resize(20,20)` after a 12×6-scale network, then with a library icon instance + `rotation=90/-90`), although each time the structural data (vertices/rotation/relativeTransform) read as expected — solved only by dropping `.resize` and setting the points explicitly in final coordinates.
 
 ### ancestor-rotation-silently-flips-locally-correct-geometry
 **Principle:** Checking `node.rotation` on the node alone is not enough — a parent (not necessarily the direct one; could be 2–3 levels up) may carry its own non-zero `rotation` inherited from an earlier design (e.g. an old icon was drawn in a rotated orientation and the wrapper compensated by rotating the container rather than the geometry). Any NEW node inserted into such a container and built geometrically correct in its local coordinate system inherits the parent rotation and renders turned — a standard `get_metadata`/XML dump does NOT show rotation (only x/y/width/height), so the bug can't be caught without an explicit walk up the parent chain.
@@ -876,7 +832,6 @@ while (n && n.type !== 'PAGE') { chain.push({ id: n.id, rotation: n.rotation ?? 
 // a non-zero rotation somewhere in chain → either compensate via node.rotation, or
 // pre-rotate the vertices by hand and insert them without .rotation at all (more robust — see the neighbouring rule)
 ```
-Verified on a profile-detail paywall screen (Mobile Web) — a new down-chevron rendered as "<" despite correct local geometry; the cause was found only 3 levels up (the Container, `rotation: -90`, invisible in an ordinary XML metadata dump) — the old (removed) icon had been drawn with this compensation in mind; the new one was built "from scratch" without it.
 
 ### fixed-fill-inner-wrapper-blocks-huged-cell-from-growing-on-text-wrap
 **Principle:** A grid cell of the form `Cell(HUG) > InnerWrapper(?) > [Label, Value]` doesn't grow when `Value` wraps to 2 lines, even when the (outer) `Cell` correctly has `primaryAxisSizingMode:'AUTO'` / `layoutSizingVertical:'HUG'` — if the inner wrapper (the intermediate, seemingly unimportant layer) kept `primaryAxisSizingMode:'FIXED'` + `layoutSizingVertical:'FILL'` from the original design (inherited from "one line = fixed height"). `FILL` inside a `HUG` parent creates a circular dependency: `Cell` wants to hug the inner wrapper, and the inner wrapper wants to fill `Cell` — Figma resolves it in favour of the old/small number rather than recomputing from real content.
@@ -897,7 +852,6 @@ function auditChain(cell) {
 inner.primaryAxisSizingMode = 'AUTO';
 inner.layoutSizingVertical = 'HUG';
 ```
-Verified on a profile-detail paywall screen (Mobile Web) — an Overview grid (6 cells: Education / Have children / Drink / Smoke / Religion / Occupation) converted from absolute x/y to auto-layout: the value "Marketing Executive" (2 lines) was clipped until the first "force recalc" attempt on the outer cells (all 6 collapsed to 16 px); the real fix was found on the intermediate `Container` layer (`primaryAxisSizingMode:'FIXED'`, `layoutSizingVertical:'FILL'`, `height:1` after the failed force-recalc attempt).
 
 ### primaryaxissizingmode-auto-hugs-width-on-horizontal-and-silently-undoes-resize
 **Principle:** `primaryAxisSizingMode` / `counterAxisSizingMode` are tied to `layoutMode`, not to "width/height": on a **HORIZONTAL** frame primary = **width**, counter = height (on VERTICAL — the reverse). So `frame.primaryAxisSizingMode = 'AUTO'`, written meaning "let the height hug the content", on a horizontal frame enables **hug on width** — and silently annuls the just-applied `resize(fixedWidth, h)`. No error; `resize` formally runs, and the frame collapses to its content width.
@@ -914,7 +868,6 @@ cell.layoutSizingHorizontal = 'FIXED';
 cell.resize(152, cell.height);
 cell.layoutSizingVertical = 'HUG';
 ```
-Verified on a profile-detail paywall screen (Desktop Web) — 18 cells of the Overview table assembled at text width instead of the column 152/250/250; a second pass with `layoutSizing*` set them exactly.
 
 ### fill-child-inside-hugging-parent-collapses-subtree-to-widest-hugging-sibling
 **Principle:** `child.layoutSizingHorizontal = 'FILL'` doesn't "stretch to the width you see" — it stretches to the parent's width, and if the parent itself is **HUG** on that axis, the parent's width is defined by the widest NON-fill sibling. One unpinned neighbour (a legend, a caption, a badge) becomes the source of truth for the whole subtree, and the structure collapses to its width.
@@ -926,7 +879,6 @@ right.counterAxisSizingMode = 'FIXED';
 right.resize(668, right.height);
 for (const c of right.children) c.layoutSizingHorizontal = 'FILL';
 ```
-Verified in the same place — `Bottom content` hugged on width, so `Table.layoutSizingHorizontal='FILL'` dragged the table to 262 px (the width of the Match/No Match legend).
 
 ### comparison-tables-build-row-major-not-column-major
 **Principle:** Build a comparison table (label | value | value) in Figma **row by row**, mirroring the DOM row, not column by column. In a column-major structure (`Column > [header, cells]`) the heights of cells in one logical row live in different tree branches and don't synchronise: a text wrap in the third column doesn't raise the height of the first two, rows drift apart, and the "fix" turns into manual height setting. Row-major (`Row > [cell, cell, cell]`) gives synchronisation for free — like `align-items: stretch` in flex.
@@ -937,7 +889,6 @@ row.counterAxisSizingMode = 'FIXED';
 row.resize(row.width, h);
 for (const c of cells) c.layoutSizingVertical = 'FILL';
 ```
-Verified in the same place — Overview and More About Me rebuilt row by row; the heights 56/36/36/36/36/56 resolved by themselves, exactly as in production.
 
 ### overlapping-siblings-are-not-expressible-in-auto-layout-move-the-fill-onto-the-frame
 **Principle:** A "backing + icon on top" pair as two siblings (ELLIPSE + INSTANCE in one frame) can't be expressed in auto-layout — auto-layout lays children out edge to edge, not layered. The right form: the fill, radius and shadow move onto the FRAME itself, the frame gets padding, and one child remains inside — the icon. This is both closer to the CSS original (`.circle` + `.icon-padding`) and removes a redundant node.
@@ -951,7 +902,6 @@ btn.fills = [circleFill]; btn.cornerRadius = 27;
 if (el) el.remove();
 btn.layoutSizingHorizontal = 'HUG'; btn.layoutSizingVertical = 'HUG';
 ```
-Verified in the same place — the Like/Message buttons (54 px, `#565656`, shadow `Button Shadow`) rebuilt; the shadow hung on the frame, the ellipse was a purely decorative backing.
 
 ### effect-style-named-for-a-role-may-not-carry-the-code-value
 
@@ -965,7 +915,6 @@ if (JSON.stringify(node.effects) !== before) {
   // the style brought a DIFFERENT value — decide deliberately, not after the fact
 }
 ```
-Verified on a profile-detail paywall screen — four Similar Profiles cards: binding to `Button Shadow` changed `0/3/6 @40%` to `0/1/3 @20%`; rolled back to the code value.
 
 ### html-to-figma-frames-keep-paint-order-sort-by-y-before-autolayout
 
@@ -977,7 +926,6 @@ const order = frame.children.map(c => ({ c, y: c.y })).sort((a, b) => a.y - b.y)
 frame.layoutMode = 'VERTICAL';
 order.forEach((c, i) => frame.insertChild(i, c));
 ```
-Verified on a profile-detail paywall screen — a Similar Profiles card: the `div.sdh.children` array went [seeking, name, location, actions] with a visual order of name/location/seeking/actions.
 
 ### strokeweight-setter-overwrites-per-side-weights
 
@@ -997,7 +945,6 @@ if (new Set(Object.values(sides)).size > 1) {
   head.strokeWeight = 1;
 }
 ```
-Verified on a profile-detail paywall screen — the "Features:" heading in an app paywall mockup carried its divider as `strokeBottomWeight: 1`; changing the stroke token to `Gray4` together with `strokeWeight = 1` produced a frame around the whole heading, noticed only on a screenshot after the pass.
 
 ### parent-hug-silently-demotes-a-FILL-child-to-FIXED
 **Principle:** `parent.primaryAxisSizingMode = 'AUTO'` (hug) on an auto-layout frame whose child is on `layoutSizingVertical = 'FILL'` is a contradiction: the child wants to take the parent's height, the parent wants to take the child's. Figma resolves it silently by switching the CHILD to `FIXED` at the height it had at the moment of assignment, and the parent "hugs" to that same number. No error; the script runs; the returned values look plausible.
@@ -1011,7 +958,6 @@ root.primaryAxisSizingMode = 'AUTO';
 payBlock.layoutSizingVertical = 'HUG';
 root.primaryAxisSizingMode = 'AUTO';
 ```
-Verified on a "Promote upgrade on Messages tab (Web)" task — unclipping an Upgrade page: the payment block sat on `FILL`; the frame stayed 1171 px instead of 2720; after `HUG` on the block the same call gave the right height.
 
 ### stretch-constrained-child-drifts-y-when-hugged-inside-a-plain-frame
 
@@ -1029,7 +975,6 @@ parent.resize(parent.width, targetHeight);
 child.x = 0; child.y = knownGoodY;
 sibling.x = 0; sibling.y = knownGoodY + child.height;
 ```
-Verified on a feed-paywall-cap task — a variant frame: the scrolling content frame (`constraints.vertical: 'STRETCH'`) at `primaryAxisSizingMode = 'AUTO'` (712→851 px) shifted its own `y` from 152 to ~82 (after the first call) and then to 247.8 (after the resize of the parent `layoutMode:'NONE'` frame a variant frame in the same call) — both times without error; the numbers looked plausible. the button container / the URL bar (`constraints.vertical: 'MAX'`) correctly self-pinned to the bottom on the parent's resize — setting them by hand was redundant but harmless. Fix — resize a variant frame first, then explicit `x`/`y` for all three nodes as the last step.
 
 ### primary-vs-counter-axis-swaps-meaning-with-layoutmode-direction
 
@@ -1047,7 +992,6 @@ footer.counterAxisSizingMode = 'FIXED';
 footer.resize(1680, footer.height);
 footer.primaryAxisSizingMode = 'AUTO';   // height hugs, width stays 1680
 ```
-Verified on a feed-paywall-cap task — assembling a Footer in a variant frame: the swapped axes gave a width of 1572 px instead of 1680 (collapsed to the widest text node) with the height frozen at 100 px — the trademark text was clipped at the bottom. Caught by screenshot, not by structural read (the `w`/`h` numbers looked plausible separately).
 
 ### fixed-height-root-with-vertical-autolayout-silently-clips-appended-children
 
@@ -1065,7 +1009,6 @@ gridWrap.appendChild(newRow); // OK, gridWrap.height grows
 controlDesktop.primaryAxisSizingMode = 'AUTO';
 // controlDesktop.height is now recomputed correctly (1258 + prior siblings)
 ```
-Verified on a feed-paywall-cap task — a variant frame (`VERTICAL` auto-layout, `primaryAxisSizingMode:'FIXED'` inherited from the original template clone) didn't grow when an ad row was added to the grid wrapper; the root screenshot showed the page unchanged although `GridWrap.height` itself grew correctly from 890 to 1258. a variant frame didn't have this problem — its `primaryAxisSizingMode` was already `AUTO` since the sixth pass.
 
 ### clone-into-differently-oriented-autolayout-parent-can-coerce-fill-to-collapse
 
@@ -1082,7 +1025,6 @@ clone.layoutSizingHorizontal = 'FILL';   // width set explicitly...
 clone.counterAxisSizingMode = 'AUTO';
 clone.layoutSizingVertical = 'HUG';      // restores the real height (352 px)
 ```
-Verified on a feed-paywall-cap task — a clone of an ad row (originally a child of a `HORIZONTAL` the grid) inserted into a `VERTICAL` the grid wrapper (a variant frame) between a blurred grid and a `Secondary CTA`; the clone's height collapsed from 352 px to 1 px despite an explicit `layoutSizingHorizontal:'FILL'` — the vertical axis changed by itself. An adjacent but separate mechanism from `parent-hug-silently-demotes-a-FILL-child-to-FIXED` above: there the parent demotes an existing `FILL` to `FIXED`; here cloning itself IMPOSES `FILL` on a node that used to be `HUG`.
 
 ### none-mode-root-frame-never-auto-hugs-after-child-removal-or-insertion
 
@@ -1098,7 +1040,6 @@ root.resize(root.width, newRootHeight);              // a NONE root never does t
 nav.x = 0; nav.y = insiderBottom;
 urlBar.x = 0; urlBar.y = insiderBottom + nav.height;
 ```
-Verified on a feed-paywall-cap task — assembling the overlay variant of a Test wall: after removing the cap-message block from the scrolling content frame in the a variant frame clone (a `layoutMode:'NONE'` root), the scrolling content frame itself collapsed correctly, but the root frame stayed at its previous (200 px greater) height until recomputed by hand — the same operation on the desktop clone (a `VERTICAL` auto-layout root, not `NONE`) worked automatically without intervention, which masked the problem on the first check (desktop "just worked"; the expectation carried over to mobile without review).
 
 ### reassigning-page-absolute-xy-after-appendchild-into-section-double-offsets
 
@@ -1116,7 +1057,6 @@ section.appendChild(node);
 node.x = targetAbsoluteX - section.x;
 node.y = targetAbsoluteY - section.y;
 ```
-Verified on a feed-paywall-cap task — grouping 8 top-level frames (control / test / test-overlay / destination × mobile / desktop) into 4 named SECTIONs in a "2×4 grid" pattern: after building the sections around already correctly placed absolute coordinates and `appendChild` with a naive "restore the same x/y", all 4 sections showed content shifted by the section's own offset (e.g. the third row ~4160 px lower than it should be) with a perfectly correct inner structure of every frame. Caught by section screenshots, not by structural read (`x`/`y` inside the section looked like "reasonable" numbers — 0, 575, 1978, etc. — precisely because those were the original absolute values, just interpreted in the wrong coordinate system). Diagnosed via `absoluteTransform`, not raw `x`/`y` (the same technique as in `sibling-sections-may-not-share-a-parent...` above).
 
 ### bottom-pinned-constraint-follows-parent-resize
 **Principle:** A child node with `constraints.vertical: 'MAX'` (pinned to the parent's bottom in the Figma UI — "pin to bottom") AUTOMATICALLY recomputes its `y` on a programmatic `parentFrame.resize(width, newHeight)` to stay at the new bottom (`y = newHeight - childHeight`), without an explicit manual move. This is expected, useful behaviour (not a bug) — but if new content is planned to go "into the space that appears" next to that pin, there may be no space left after the resize: the pin simply travelled with the new bottom rather than staying at its old position and freeing a gap.
@@ -1128,12 +1068,10 @@ parentFrame.resize(parentFrame.width, newHeight);
 const after = pinnedNode.y;  // after resize — this is the real boundary
 // place new content strictly above `after`, with the needed margin
 ```
-Verified on a profile-detail paywall screen — the mobile paywall frame extended to `1883.8`; the child the browser chrome (`constraints.vertical:'MAX'`) automatically moved from `y:679` to `y:1751`, leaving only ~5 px between the end of the content (`y:1745.8`) and the bar's bottom — the frame's target height (`2000.8`) had to be recomputed, factoring in the bar's final position AFTER its own auto-repin.
 
 **Compounding variant (double shift), when the pinned node's position is set BY HAND BEFORE the parent's resize, already computed "with" the future growth:** `pinnedChild.y = newBottomEdge; parentFrame.resize(w, newHeight);` yields NOT `newBottomEdge` but `newBottomEdge + (newHeight - oldHeight)` — the resize itself adds another identical shift ON TOP of the manually set one, because the constraint recomputation is applied to the current (already manually shifted) `y` as if it were the old value. The symptom is distinguishable from "just a small gap" by the final position being ENTIRELY outside the parent (e.g. `child.y > parentFrame.height`; the node leaves past the bottom edge). Fix — the order already in the example above: parent resize FIRST, final `x`/`y` of pinned children as the LAST step of the script, never before. Verified twice on a mobile chat app file — first a the message composer composer (bottom-pinned) in an open chat moved from the expected `y:1256` to an actual `y:1724` (the delta `468` duplicated), then the same mechanism recurred on a disabled composer in a closed chat (`y:872` expected → `y:928` actual, delta `56` duplicated) — both times because the position was set by hand BEFORE, not after, `chatFrame.resize`.
 
 **The same repin fires on a SELF-RESIZE of the pinned node too, without a single `parentFrame.resize` in the script.** If the pinned (`constraints.vertical: 'MAX'`, `layoutPositioning: 'ABSOLUTE'`) child's own `height` shrank (e.g. an inner TEXT was removed and its auto-layout hug parent recomputed the height), Figma moves `y` so that the bottom edge (`y + height`) stays in place — even if nothing was explicitly resized at the OUTER parent's level. The symptom is the reverse of the main section: not "detached from the bottom" but "pulled itself to the bottom without a single line of code for it" — easy to take for a bug / an unapplied edit on a quick before/after check of `y`, if you don't account for the fact that `.remove` of a child node also triggers the constraint-pin recomputation. Verified on a mobile chat app file — a bottom sheet docked to the bottom of an 800-high viewport frame lost a caption line (`content.primaryAxisSizingMode:'AUTO'` recomputed the sheet height 504→460), and `y` recomputed itself from `296` to `340` (`340+460=800`, the same bottom edge) without an explicit `parentFrame.resize` — a manual pass-through fix (`sheet.y = 800 - sheet.height`) turned out to be a no-op; the value was already right.
-
 
 ### self-fill-child-blocks-own-primaryaxissizingmode-auto
 **Principle:** A node with `layoutMode` (itself an auto-layout container) can SIMULTANEOUSLY be a FILL child of ITS parent (`node.layoutSizingVertical = 'FILL'`, inherited from the parent auto-layout) — in this state assigning `node.primaryAxisSizingMode = 'AUTO'` (asking the node to hug its children) silently rolls back to `'FIXED'` in THE SAME script, without error. This is a mirror but separate trap from `parent-hug-silently-demotes-a-FILL-child-to-FIXED` above: there the problem is in the node's CHILDREN, here in the NODE ITSELF as someone else's child. FILL as "take the size the parent gives" is incompatible with AUTO as "compute the size from my children" — Figma gives FILL priority.
@@ -1151,7 +1089,6 @@ content.resize(content.width, 1);
 content.primaryAxisSizingMode = 'AUTO'; // now it holds
 content.layoutSizingVertical = 'HUG';   // also goes through right after
 ```
-Verified on a mobile chat app file (ApprovalSheet) — when inserting a new comment block into a reject sheet, the `content` frame (itself a FILL child of the sheet wrapper, calibrated to a fixed 844 px viewport height) silently ignored the first `primaryAxisSizingMode='AUTO'` attempt; the collapse trick worked — but the result was then deliberately rolled back to FILL/FIXED, because the remaining gap before the CTA turned out to be an intentional "stretch the sheet to the viewport height" (a neighbouring reject sheet of the same family holds the same behaviour via AUTO hug at all levels — two visually similar sheets in one file were calibrated differently, and that is not a discrepancy to unify; see the caveat above).
 
 ### cloned-fill-child-into-hug-parent-collapses-height
 **Principle:** A node cloned from a context where it had `layoutSizingVertical: 'FILL'` (e.g. a child of a HORIZONTAL auto-layout with its height inherited from a neighbour), on `appendChild` into a NEW auto-layout parent with `primaryAxisSizingMode: 'AUTO'` (hug) doesn't inherit the meaning "take the height as before" — `FILL` in a hug parent has no reference height to fill (the parent computes its height FROM the children), and Figma collapses such a child to a minimal value (1 px in practice), NOT to its former "real" height. The difference from `parent-hug-silently-demotes-a-FILL-child-to-FIXED` above: there the parent EXISTED with that FILL child and is switched to hug after the fact — the child freezes at a reasonable current height; here the child is INSERTED as a clone into an already-hug parent that never had a reference height for that particular FILL value — a collapse, not a freeze.
@@ -1163,7 +1100,6 @@ card.appendChild(rowClone); // card = VERTICAL, primaryAxisSizingMode='AUTO'
 // rowClone.height is already 1 here — the inherited FILL can't lean on a hug parent
 rowClone.layoutSizingVertical = 'HUG'; // fix — right after append
 ```
-Verified on a mobile chat app file — a reject-bridge system-message card in a chat (a system-message card): the file-name row (cloned from an existing HORIZONTAL file row, originally a `FILL` child of another context) collapsed to `height: 1` for both file rows on insertion into the card's new VERTICAL hug container; the overall container meanwhile correctly reported its final height by the last child's y coordinates, so the discrepancy (`card.height` smaller than the sum of the last child's positions) itself became a diagnostic signal before the screenshot did.
 
 ### counteraxissizingmode-governs-the-perpendicular-not-own-axis
 **Principle:** `counterAxisSizingMode` / `primaryAxisSizingMode` are not interchangeable "width/height" but "primary = along layoutMode, counter = across". On a VERTICAL frame `primaryAxisSizingMode` governs HEIGHT and `counterAxisSizingMode` WIDTH; on HORIZONTAL — the reverse. The ready force-recompute recipe in SKILL.md (`counterAxisSizingMode='FIXED'→resize(w,0)→'AUTO'→layoutSizingVertical='HUG'`) is written for a HORIZONTAL frame where the height is to be recomputed (= the counter axis for HORIZONTAL). Copying that recipe one-to-one onto a VERTICAL frame to recompute its height doesn't work: `counterAxisSizingMode` on a VERTICAL frame is the WIDTH, and the `FIXED→resize(w,0)→AUTO` cycle doesn't "reset the height for recomputation" but temporarily zeroes and re-hugs the WIDTH from children that are themselves `layoutSizingHorizontal:'FILL'` (inherited from the parent) — the circular dependency `hug-from-children` vs `children-fill-from-parent` collapses the width to a degenerate minimum (in the specific case — to the sum of the row's fixed elements like icon + gap, unrelated to the real content).
@@ -1180,7 +1116,6 @@ optionsWrap.layoutSizingVertical = 'HUG';
 // but most often it's simpler and safer not to touch sizing modes at all: remove()/appendChild()
 // on an already correctly configured auto-layout frame recomputes the primary axis by itself
 ```
-Verified on a mobile chat app file (an internal create-wizard task) — a VERTICAL `optionsWrap` (a list of type options in a new create wizard) needed a height recompute after `options[2].remove`; applying the HORIZONTAL-tuned recipe to counterAxisSizingMode instead of primaryAxisSizingMode collapsed the radio options' width to 35 px and the nested TEXT to 7 px (every letter on its own line). Fix — simply don't touch the axis modes at all; remove recomputed the height by itself; in the neighbouring case (`fieldsGroup` of 3 new text fields) an explicit `layoutSizingHorizontal='FILL'` was needed — but on EVERY intermediate wrapper frame in the chain up to the FIXED-width ancestor, not only on the leaf instance: skipping FILL on one intermediate `block` container (while its child `Input` instance was already `FILL`) gives the same circular hug-vs-fill collapse (`90px` instead of `358px`) — the FILL chain breaks at the first unset link.
 
 ### height-read-for-downstream-math-precedes-late-recalc-after-child-fill-assignment
 **Principle:** Within ONE `use_figma` script, after `appendChild(newChild)` into a HUG auto-layout parent, `newChild.characters = …` and then `newChild.layoutSizingHorizontal = 'FILL'` — an immediate read of `parent.height` (the HUG parent, not newChild itself) for further geometric arithmetic (e.g. computing how far to move the neighbours below) may return a value LARGER than the same `parent.height` read a bit later in the same script without any additional mutations between the two reads. The recompute of the parent's HUG height after assigning `layoutSizingHorizontal` to its child apparently doesn't fully fit into the same synchronous tick as the mutation itself — and a `resize` called on the basis of the FIRST (inflated) read pins exactly the inflated number, which is not recomputed afterwards.
@@ -1200,7 +1135,6 @@ list.resize(list.width, cloneBottom + 16);
 composer.y = list.y + list.height;
 root.resize(root.width, composer.y + composer.height); // derive the WHOLE chain from already-settled numbers, not accumulated deltas
 ```
-Verified on a mobile chat app file (a chat-composer task) — a new send-error bubble (a clone of the support pattern + an added error/resend row) was inserted into a NONE-layout `message main layout` container; the container growth (`grow`) computed from an early `clone.height` read pushed `composer.y` outside `root.height` (`clipsContent=true`) — the composer visually vanished from the screen. Screenshot verification caught the disappearance; fix — a second pass with a clean repeat read of `clone.height`/`clone.y` without intermediate mutations gave correct geometry first time.
 
 ### bottom-sheet-fixed-backdrop-children-fixed-height-not-hug-after-list-edit
 **Principle:** In files where a bottom sheet is built on the pattern "fixed 844 px root (backdrop) → the sheet wrapper (VERTICAL) → `content` (VERTICAL, single child — a list/form)", and the sheet wrapper/`content` were calibrated to the ORIGINAL content volume via `primaryAxisSizingMode: 'FIXED'` (not `'AUTO'`) — adding or removing items inside the nested AUTO-hugging list (`primaryAxisSizingMode: 'AUTO'`) correctly recomputes the height of the LIST ITSELF but does NOT recompute `content`/the sheet wrapper, whose FIXED height is an independent number unrelated to the content. The difference remains as a visible empty gap between the last list/form item and the bottom button panel (footer), which is physically pressed to the bottom of the sheet wrapper, not to the end of the real content.
@@ -1216,7 +1150,6 @@ sheetFilter.primaryAxisSizingMode = 'AUTO'; // recomputes from hat + content + f
 
 sheetFilter.y = root.height - sheetFilter.height; // glue to the bottom of the fixed 844 px backdrop
 ```
-Verified on a mobile chat app file — worked three times in one session on different nodes: (1) a `changeStatus` sheet after trimming the status list from 10 to 5 items — a ~470 px gap; (2) a `filterStates` sheet after removing one item — a ~95 px gap, hard to see by eye but confirmed by a numeric measurement via `absoluteTransform`; (3) a new `repeatedIssue` sheet cloned from an already-assembled donor — after INSERTING a new block (a dropzone) into `content`, the donor's inherited FIXED height turned out SMALLER than the new content, and without the recompute the footer/comment field was clipped by the sheet's bottom edge instead of an empty gap appearing (the same root, a symmetric symptom: an ancestor's FIXED height is out of sync with the content in either direction, not only "too large").
 
 ### resize-with-bottom-pinned-child-constraint-compounds-manual-y-shift
 _A third independent confirmation of the same pattern as the "Compounding variant (double shift)" inside `bottom-pinned-constraint-follows-parent-resize` above (the same delta-compounding mistake with a manual `.y` before `resize`), a different session._
@@ -1233,7 +1166,6 @@ root.resize(root.width, 928 + delta);
 root.resize(root.width, 928 + delta);
 composer.y = banner.y + banner.height; // absolute anchoring to an untouched neighbour, not delta arithmetic
 ```
-Verified on a mobile chat app file (a an archived-chat state reopen-affordance follow-up) — after the banner grew by 28 px for a new reopen link, `composer.y = 900`, set BEFORE `root.resize`, read back as `928` (900+28) because the composer carries `constraints: {vertical: 'MAX'}`; fix — recompute `composer.y` from the untouched `banner.y + banner.height` (both `MIN/MIN`) AFTER the resize, not trusting the manual assignment before it.
 
 ### plain-frame-screen-to-autolayout-conversion-recipe
 
@@ -1261,8 +1193,6 @@ Verified on a mobile chat app file (a an archived-chat state reopen-affordance f
 ```
 **Symptom if the order is skipped (enabling root.layoutMode at once without preparing the body):** the root either collapses to the sum of the children's "raw" current sizes (which at that moment are not yet FILL/HUG — just their old fixed values), or (if not all children are in place yet) gives a wrong stack order requiring a second `insertChild` pass.
 
-Verified on a mobile chat app file, node (a closed-chat-state screen mockup) — a screen of 4 top-level NONE children (nav / message list / status alert / input) rebuilt into a 3-part structure (nav / Chat body[list + ABSOLUTE alert] / input) on a FIXED 390×956 root; the final screenshot is compositionally identical to the original, with 42 of 43 containers in the subtree given auto layout (the single legitimate exception — a decorative vector icon; see the neighbouring note to `hug-card-with-fill-header-needs-full-chain-flip-to-hug` about art frames).
-
 ### autolayout-per-item-alignment-needs-row-wrapper-not-layoutalign
 
 **Principle:** `layoutAlign` (`MIN`/`CENTER`/`MAX`) is a deprecated per-child counter-axis alignment override; the modern API requires **all** children of one auto-layout parent to have THE SAME counter-axis alignment, set on the parent via `counterAxisAlignItems` (see the `plugin-api-standalone.d.ts` comment on `layoutAlign`: "Counter axis alignment is now set on the auto-layout frame itself... this means all layers in an auto-layout frame must now have the same counter axis alignment"). A list of messages/cards where each item aligns ITS OWN way (left for one, right for another — the typical chat-bubble pattern) can't be expressed through one VERTICAL auto-layout with a shared `counterAxisAlignItems` — it's a SHARED property across all children at once.
@@ -1279,7 +1209,6 @@ row.appendChild(bubble);
 bubble.layoutSizingHorizontal = 'HUG';
 row.layoutSizingHorizontal = 'FILL'; // the row itself stretches to the list's full width
 ```
-Verified on a mobile chat app file, nodes / — 4 chat bubbles (2 left / Support A, 2 right / Support B) correctly restored their alternation through 4 independent row wrappers inside one VERTICAL list.
 
 ### absolute-positioned-child-cannot-fill-use-constraints-for-pinned-overlay
 
@@ -1292,7 +1221,6 @@ alert.constraints = { horizontal: 'STRETCH', vertical: 'MAX' }; // NOT layoutSiz
 alert.x = 16;                              // left inset, mirrors the parent's padding
 alert.y = body.height - alert.height;      // press to the bottom
 ```
-Verified on a mobile chat app file, node ("Chat body") — `status-alert-neutral` moved from a top-level NONE parent (where it was the only element with the bug `constraints: MIN/MIN` instead of `STRETCH`; it didn't stretch unlike its neighbours) into the new auto-layout body as ABSOLUTE+STRETCH — both defects (didn't stretch; structurally in the wrong parent) removed in one move.
 
 ### hug-card-with-fill-header-needs-full-chain-flip-to-hug
 
@@ -1309,7 +1237,6 @@ nameColumn.layoutSizingHorizontal = 'HUG';       // as someone's child
 headerRow.primaryAxisSizingMode = 'AUTO';        // its own width axis (HORIZONTAL layout → primary=horizontal)
 headerRow.layoutSizingHorizontal = 'HUG';
 ```
-Verified on a mobile chat app file, 3 of 4 chat bubbles of node (the 4th needed no edit — it had a file-attachment block with a surviving 256 px FIXED anchor that happened to save it from collapse) — after flipping the whole chain "header → user-wrap → avatar-row → name-column → name/timestamp text" the cards correctly hugged to the header's width (wider everywhere than the short message text on this screen); heights returned to the original 92/92/181/92 px.
 
 ### bottom-sheet-shell-plain-frame-to-autolayout-recipe
 
@@ -1354,8 +1281,6 @@ sheetBox.layoutSizingHorizontal = 'FILL'; sheetBox.layoutSizingVertical = 'HUG';
 **When the screen under the sheet is NOT an empty backdrop but real content** (e.g. a sheet over an open chat; the sheet overlay full-screen; the root already holds nav/body/footer in normal flow) — the sheet overlay doesn't become the root itself but is added to the already three-part root as `layoutPositioning: 'ABSOLUTE'` + `constraints: {horizontal:'STRETCH', vertical:'STRETCH'}` (stretches over the whole screen, not just one axis — unlike the bottom pinned banner from `absolute-positioned-child-cannot-fill-use-constraints-for-pinned-overlay`, here BOTH axes need STRETCH), `x=0, y=0`. Inside, the sheet overlay itself is the same recursion of the recipe above (`layoutMode: 'VERTICAL', primaryAxisAlignItems: 'MAX'`, `resize` to the root's full height).
 **Visible side effect (not a bug; expected and worth telling the user):** since `content`/the sheet box now hug honestly, the sheet becomes visually SHORTER and sits LOWER on the screen than with the hard-coded oversized height — that is the point of the fix (height = real content), but on the screenshot it's a noticeable composition change, not just an "under the hood" refactor.
 
-Verified on a mobile chat app file — the identical recipe applied to 4 sheet nodes of one donor: (566→288 px content), (566→160 px), (566→394 px), and inside (566→122 px, nested in a full-screen the sheet overlay over an already three-part chat screen) — all 4 visually correct (buttons without doubled padding, title centred, the scrim layered on top unharmed).
-
 ### hug-card-collapses-when-only-anchor-is-narrower-than-content-keep-fixed
 
 **Principle:** Extends `hug-card-with-fill-header-needs-full-chain-flip-to-hug` — "a frozen FIXED anchor saves the card from collapse" works ONLY when that anchor is wide enough (wider than the real content of the other FILL branches). If the card holds several direct/nested FILL children WITHOUT their own HUG anchor (ordinary TEXT labels/values not converted to HUG) and the ONE and only real FIXED anchor is NARROWER than the content needs (e.g. a narrow 132 px `File row` inside a card that has a comment paragraph designed for 256 px), an attempt to hug the outer container (`counterAxisSizingMode: 'AUTO'`) doesn't keep the old width (unlike the the file block case) but **collapses the whole card to the width of that narrow anchor** — Figma uses the single real FIXED descendant as the base for the hug computation regardless of it being the narrowest, not the widest, element of the tree.
@@ -1372,8 +1297,6 @@ outer.primaryAxisSizingMode = 'AUTO';
 // a linked property; no need to set it separately after counterAxisSizingMode='FIXED'
 ```
 **Side observation:** `layoutSizingHorizontal` and `counterAxisSizingMode` / `primaryAxisSizingMode` are linked properties in one direction: explicitly setting `counterAxisSizingMode = 'FIXED'` on a node automatically switches its own `layoutSizingHorizontal` to `'FIXED'` even if it was `'HUG'` before — no separate call is needed to roll back the second property.
-
-Verified on a mobile chat app file, node ("System message — Request rejected" inside, a long open chat with a counterparty) — a the details card (Reason / Comment / Files, paragraph text) was rolled back to FIXED 280×376 after a failed hug attempt; the neighbouring the file block on THE SAME screen, with an identical anchor structure, hugged normally (280×181, an exact match with donor) — confirming that the decisive factor is the anchor's width relative to the content, not structural similarity of the tree.
 
 ### direct-y-assignment-silently-ignored-inside-auto-layout-reorder-via-insertchild
 _Same principle as `autolayout-manual-xy-silently-ignored-order-controls-position` above (manual `.x`/`.y` are ignored by the auto-layout engine; fix — `insertChild`) — here a specific scenario of reordering already-existing (not just-added) children, a month later._
@@ -1393,7 +1316,6 @@ for (let i = 0; i < order.length; i++) {
 // then check the ancestor chain for FIXED blockers and switch them to AUTO if needed
 if (grandparent.primaryAxisSizingMode === 'FIXED') grandparent.primaryAxisSizingMode = 'AUTO';
 ```
-Verified on a production admin dashboard, an operator card — inserting a 12-field "Main information" block before the existing "Title + CTA" / "search + filters" / "Table Container" inside the auto-layout "Main layout": direct `.y` assignment didn't change the order at all (the next `get_metadata` showed the original coordinates); `insertChild` in a loop worked at once; separately `primaryAxisSizingMode`/`counterAxisSizingMode` had to be switched from `FIXED` to `AUTO` on two ancestor levels (`detailWrap.counterAxisSizingMode`, `outerFrame.primaryAxisSizingMode`) — without that the recomputed auto-layout height broke off halfway and the frame clipped the content at the bottom.
 
 ### fill-sizing-set-before-layoutmode-switch-resolves-against-stale-axis
 
@@ -1415,7 +1337,6 @@ child.layoutSizingHorizontal = 'FIXED';
 child.resize(10, child.height);
 child.layoutSizingHorizontal = 'FILL';
 ```
-Verified on a mobile chat app file — a search-result card: the `text-stack` frame got `layoutSizingHorizontal: 'FILL'` before the parent card was switched from `VERTICAL` to `HORIZONTAL`; the final width stuck at 334 px (the full VERTICAL width) instead of the expected 302 px, so the trailing chevron (`x=354`) fell almost entirely outside the 358 px wide, `clipsContent:true` card. A forced recompute with the `FIXED→resize→FILL` cycle (now in the right context) gave the correct `stackW: 302, chevronX: 322`.
 
 ### resize-on-fresh-autolayout-frame-before-hug-settles-corrupts-text-sizing
 
@@ -1436,7 +1357,6 @@ stack.appendChild(textLine2);
 // … the use_figma call ends here; the frame is given time to settle …
 // in the NEXT call, if a recompute is still needed — the resize technique is safe now
 ```
-Verified on a mobile chat app file — donor, a freshly assembled result row: `resize(100, stack.height)` right after creating and populating `text-stack` with children corrupted the sizing of both text lines; the card inflated 358×54 → 358×218. Fix — an explicit rollback of `textAutoResize = 'HEIGHT'` and `layoutSizingVertical = 'HUG'` on both TEXT nodes plus a separate collapse cycle (`FIXED` → `resize(w,10)` → `HUG`) on `text-stack` itself.
 
 ### hug-sizing-readback-on-text-child-may-report-fixed-despite-correct-geometry
 
@@ -1449,7 +1369,6 @@ node.layoutSizingVertical = 'HUG';
 // the next read in this same script may show layoutSizingHorizontal: 'FIXED' —
 // check the fact, not the flag: node.width must equal the content width, node.x must sit at the row's right edge
 ```
-Verified on a mobile chat app file — value texts of locked-field rows: after setting `layoutSizingVertical = 'HUG'` following `layoutSizingHorizontal = 'FILL'` on the label of the same row, the post-mutation read of the value text showed `layoutSizingHorizontal: 'FIXED'` instead of the expected `'HUG'` — while the actual width (44 px / 46 px, exactly content width) and position (sitting at the right edge of the 358 px wide row) were correct on the screenshot. An independent reviewer confirmed the geometry with a separate read; documented as a readback quirk, not a defect.
 
 ### fill-width-text-created-invisible-freezes-at-zero-instances-inherit-master-fix
 
@@ -1478,8 +1397,6 @@ sub.visible = false; // the default is restored, but the geometry is already rig
 // no need to walk every instance separately if the geometry wasn't overridden there.
 ```
 
-Verified on a mobile chat app file — a new a timeline-node component component, the `Sub` node (text under the timeline node's title, driven by a `Has Sub` boolean prop): on an instance with `Is Manual Edit=true` / `Has Sub=true` / `Sub="«clarifying details»"` the sub-text rendered as `«` and `»` on different lines. The fix on the master component (temporary visible → explicit FIXED width 332 → `textAutoResize: 'HEIGHT'` → invisible) applied to the already-existing instance automatically, without a separate pass over the instance.
-
 ### fixed-sidebar-vs-hug-content-row-leaves-asymmetric-fill-gap
 
 **Principle:** A `HORIZONTAL` auto-layout row with two columns — one of `FIXED` height (a sidebar, canonically 960 px), the other of variable content height (`Main Content`, hug) — the row itself (`counterAxisSizingMode: 'AUTO'`) hugs to the TALLER of the two columns, but that does NOT stretch the shorter column to the row's height: `layoutSizingVertical` on a child `INSTANCE`/`FRAME` doesn't give `FILL` without an explicit setting, and attempting `FILL` for a HORIZONTAL parent requires an explicit `counterAxisAlignItems` / per-child stretch that isn't there by default. Result — the short column stays at its own hug/fixed height, and in the gap between its bottom edge and the row's edge a foreign background (page/canvas) shows, not the short column's background.
@@ -1493,7 +1410,6 @@ const target = bodyRow.height; // the row has already hugged to the taller colum
 if (sidebar.height < target) sidebar.resize(sidebar.width, target);
 if (mainContent.height < target) mainContent.resize(mainContent.width, target); // symmetric check — not only the sidebar
 ```
-Verified on a production admin dashboard — a a detail-page shell, two assemblies from one skeleton on one of the similar pages: the "Overview" frame (tall content, 1387 px) fixed by an explicit `resize` of the sidebar; the "Users" frame (short content, ~760 px) — the same asymmetry in the reverse direction wasn't checked at all, found only by the owner's question about the finished mockup, not by own validation.
 
 ### inserting-siblings-into-fill-anchored-row-breaks-implicit-spacer
 
@@ -1516,13 +1432,11 @@ const leftGroup = figma.createAutoLayout('HORIZONTAL', { itemSpacing: 12 });
 row.appendChild(leftGroup); row.appendChild(actionsGroup);
 row.primaryAxisAlignItems = 'SPACE_BETWEEN';
 ```
-Verified on a production admin dashboard — a a detail-page shell, the the page-header component "Main content" row: the source master held the title sub-instance (title, `FILL`, 664 px with real text of 519 px) + the actions group as the only two children; inserting the status badge + a status-toggle block between them gave a measurable gap (the title text ends at x≈555, Badge starts at x=688 — 133 px of emptiness) with a completely valid structure.
 
 ### single-fill-child-in-horizontal-row-greedily-takes-full-width
 **Principle:** A single `layoutSizingHorizontal: 'FILL'` child in a HORIZONTAL auto-layout takes 100% of the parent's available width (minus padding), not "its share", if the siblings that usually share the space are absent at that moment — relevant for "unpaired"/single slots in constructions that usually have 2+ FILL children, but the specific instance holds only one.
 **Symptom:** a node that should take half the row (e.g. one column of two, the second deliberately empty) stretches across the whole row after switching to `FILL`, eating the space of the empty neighbouring slot.
 **Pattern:** for a deliberately "incomplete" row (the neighbouring slot stays empty, not stretched) — keep that single child `FIXED` at an explicit width (e.g. half the usual row), not `FILL`, even if by the file's general rule similar elements in OTHER (full) rows should be `FILL`.
-Verified on a production admin dashboard — while converting the whole field grid from `HUG`/`FIXED` to a `FILL` cascade, the single occupied the field row of an odd row (the neighbouring slot is canonically empty) was deliberately left `FIXED` at 568 px — switching to `FILL` would have stretched it across all 1152 px of the row, destroying the empty-neighbour effect.
 
 ### absolute-overlay-zorder-and-stale-geometry-after-resize
 **Principle:** An absolutely positioned overlay sibling (`layoutPositioning: 'ABSOLUTE'`) inside an auto-layout container renders in z-order according to its position in `children` — if it comes AFTER label/value in the children list and carries an opaque fill, it is drawn OVER them, fully covering the text, rather than serving as a background under them. Separately, its own `x`/`y`/`width`/`height` are static numbers pinned to the container's specific geometry at creation time; a later change of the container's size (a cell orientation change, a row height reduction) doesn't recompute them.
@@ -1533,7 +1447,6 @@ Verified on a production admin dashboard — while converting the whole field gr
 container.insertChild(0, hoverTint);
 hoverTint.resize(container.width, container.height); // recompute to the current size; don't leave the old value
 ```
-Verified on a production admin dashboard — the hover tint (a RECTANGLE with an opaque fill) sat AFTER label/value in children and rendered over the text; on top of that it carried a 56 px height inherited from the row before its conversion to a compact 36 px cell. The same class of problem (donor absolute coordinates pinned to a different geometry) had been recorded earlier for the `icon.x`/`icon.y` of external-link icons in the same project — here a new aspect is added: not only x/y but also z-order/height can be similarly stale.
 
 ### resize-on-component-set-scales-its-variants
 **Principle:** `componentSet.resize(w, h)` is not "fit the set's frame" but **scaling the content**: the variants inside a COMPONENT_SET sit on `SCALE/SCALE` constraints, so resizing the frame itself proportionally recomputes the sizes and positions of ALL variants and their children — independently on X and Y, i.e. with distortion of proportions if the new aspect ratio differs from the old. The set's frame can be grown/shrunk only via `resizeWithoutConstraints(w, h)` — it changes the frame without touching the children.
@@ -1559,7 +1472,6 @@ const spaceBetween = n => n.primaryAxisAlignItems === 'SPACE_BETWEEN';
 // bind the gap only where it really takes part in the layout
 if (f === 'itemSpacing' && spaceBetween(n)) continue;
 ```
-Confirmed on a real product file: a mass spacing binding hit 74 space-between frames (66 on the screens page, 8 inside DS masters). Not one moved by a pixel — measuring `children.map(c => c.x)` before and after matched completely — but the panel stopped showing `Auto`, and a person noticed it, not a check.
 
 ### vectorpaths-node-box-normalizes-to-path-bbox
 **Principle:** A node's `vectorPaths` don't position it at `(0, 0)` — Figma normalises the node's box to the path's bounding box, so `x`/`y` come out equal to the bbox minimum, not zero. If the node must be planted at a specific origin, either author the path with that bbox minimum already baked in, or — when overwriting `vectorPaths` on an existing vector — delete the node and create a fresh one rather than reusing it (the stale box otherwise persists).
