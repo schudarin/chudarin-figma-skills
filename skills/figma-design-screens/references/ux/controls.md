@@ -1,7 +1,34 @@
-# Controls — links, buttons, panels, pickers
+# Controls — which control, and how it behaves
 
 Reached from `references/ux-rules.md`. Read when the screen has a link, a button, a dropdown, a
-picker, or any panel that opens.
+picker, or any panel that opens. What the controls are *called* is in `ux/labels.md`.
+
+## Choosing the control
+
+### The number of options picks the control
+
+| Options | Single choice | Multiple choice |
+|---|---|---|
+| 2–6, all worth showing | radio buttons | checkboxes |
+| 4 ± 1, short labels | a segmented group | — |
+| more than 6, or long labels | a dropdown | a multi-select |
+| many, with search | a combobox (see below) | a multi-select with search |
+
+A segmented group with five long labels is a row of tabs pretending to be a control; past that
+count, or past a few words per label, move to tabs or to a dropdown. Radio buttons past six become
+a list nobody reads to the end.
+
+**Read:** the option count and the longest label against the control chosen.
+
+### Toggle applies now; a checkbox waits for Save
+
+They look interchangeable and they are not. A **toggle** states that the thing is on and takes
+effect the moment it moves — no confirmation, no Save. A **checkbox** marks a choice that something
+else applies later: a Save button, a submit, a bulk action. Using a toggle inside a form with a Save
+button means the user cannot tell which of their changes are already live, which is the same defect
+as mixing the two save models in `ux/actions.md`.
+
+**Read:** each toggle against whether its effect is immediate; each checkbox against what applies it.
 
 ### Text links get no enlarged tap zone
 
@@ -37,6 +64,22 @@ touch, every affordance the user needs must be visible in the resting state; hov
 extra for pointer devices, never the carrier of information.
 
 **Look:** the resting state alone, with no hover layer, and ask what the user can tell from it.
+
+### A copy affordance appears next to the value, on hover
+
+Text the user will need to copy — an identifier, a key, an address — gets a copy control that
+appears on hover, immediately beside the value at a fixed offset, at the lowest control tier. It is
+not a permanent button, because it would then compete with the content it belongs to.
+
+**Read:** copyable values have the affordance; the offset matches the one recorded in `design.md`.
+
+### Chips wrap; they never truncate their row
+
+A set of tags or chips flows to the next line with a consistent gap, rather than clipping the row or
+scrolling sideways. An individual chip whose label is too long truncates *itself*, with the full
+value reachable elsewhere (`ux/content.md`). Any chip pinned by the user sorts first.
+
+**Read:** the chip container wraps, the gap is one token, long labels truncate per chip.
 
 ### An interactive element has every state it can be in, drawn
 

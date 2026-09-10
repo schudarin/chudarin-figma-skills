@@ -22,6 +22,55 @@ either it does not discard, or it asks (the ladder in `ux/actions.md`).
 **Read:** what each exit does with unsaved input; all exits agree.
 **Blocking:** an exit that silently discards user input.
 
+### Below a certain size, a modal should have been a side panel
+
+A modal that holds two fields and a button is a heavy container for a light task: it blackens the
+page, blocks everything, and demands a decision that isn't one. Products that have both a modal and
+a side panel should name the threshold — below it, the panel; above it, the modal — rather than
+deciding per screen.
+
+**Read:** the modal's content against the threshold recorded in `design.md`.
+
+### A modal never lets the page scroll behind it
+
+The backdrop covers the page and the page underneath stays still. Scrolling the content behind a
+modal is how a user loses their place while being asked a question, and on touch it is how they
+scroll the wrong surface entirely.
+
+**Read:** the modal frame specifies that the page behind does not scroll.
+
+### A modal taller than the viewport pins its header and footer
+
+Content scrolls; the title and the actions do not. Otherwise the user scrolls to read and then has
+to scroll back to answer. And a fluid-width modal has a maximum: past it, it stops growing and
+centres, because a dialog the width of a large monitor is unreadable.
+
+**Read:** the tall variant pins header and footer; the fluid variant has a max width.
+
+### A side panel's exits depend on whether it blocks the page
+
+A panel that dims and blocks the page closes on outside click, on Escape, on its close button and
+on Cancel — the outside is inert, so clicking it can only mean "leave". A panel that deliberately
+does **not** block, so the user can keep working behind it, must not close on outside click: every
+click out there is real work, and closing the panel on it destroys the thing the panel was for.
+
+**Read:** for each panel, whether it blocks; the exit set matches.
+
+### An explanatory panel is deliberately non-blocking
+
+A panel whose content is guidance about the settings behind it exists so the user can read and apply
+at the same time. Making it modal defeats its purpose: they read it, dismiss it, and then try to
+remember what it said.
+
+**Read:** panels containing instructions are non-blocking.
+
+### A multi-level panel says how to get back one level
+
+A back affordance before the title, not only a close button — otherwise the only way out of the
+third level is to abandon the whole panel and start again.
+
+**Read:** panels with nested levels carry a back control in the header.
+
 ### Back returns, it does not re-enter
 
 Back from a detail lands on the list at the position the user left, with their filter and scroll

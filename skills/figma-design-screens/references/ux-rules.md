@@ -15,11 +15,14 @@ the routing table; the rules themselves live in `ux/*.md`.
 
 | The screen contains | Read |
 |---|---|
-| any interface text — labels, messages, button text, placeholders | `ux/copy.md` |
+| prose — hints, messages, descriptions, empty-state text | `ux/copy.md` |
+| a control the user reads before pressing — button, link, menu item | `ux/labels.md` |
 | a field, a form, validation, one step of a multi-step flow | `ux/forms.md` |
 | a link, a button, a dropdown, a picker, a panel that opens | `ux/controls.md` |
 | saving, cancelling, deleting, acting on a selection | `ux/actions.md` |
-| anything that arrives, can be missing, or can fail | `ux/states.md` |
+| anything that can be missing or can fail | `ux/states.md` |
+| anything that arrives asynchronously | `ux/loading.md` |
+| a hint, a hover explanation, an onboarding tour | `ux/tooltips.md` |
 | real data — names, amounts, dates, long strings, tables, paragraphs | `ux/content.md` |
 | a place inside a flow, an overlay, a set of screens to move between | `ux/navigation.md` |
 | anything that appears, disappears, expands or moves | `ux/motion.md` |

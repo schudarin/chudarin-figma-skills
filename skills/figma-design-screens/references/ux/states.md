@@ -1,7 +1,8 @@
-# States — empty, loading, error, progress, confirmation
+# States — empty, error, confirmation
 
-Reached from `references/ux-rules.md`. Read when the screen shows anything that arrives, can be
-missing, or can fail — a list, a fetch, a submit, an upload.
+Reached from `references/ux-rules.md`. Read when the screen shows anything that can be missing or
+can fail — a list, a submit, an upload. Everything about the wait itself — skeletons, spinners,
+progress, reserved space — is in `ux/loading.md`.
 
 `references/checks.md` already requires the error, empty and loading states to be *drawn*. These
 rules are about what has to be in them.
@@ -22,41 +23,6 @@ Not "No data". What this place is for, and the single next step. This is the mos
 the user will ever give the screen, and a blank panel spends it on nothing.
 
 **Read:** the empty frame contains a sentence about the purpose and exactly one primary action.
-
-### Loading shows the shape of what is coming
-
-Skeletons that match the real layout — the same rows, the same column widths. A spinner centred in
-an empty area throws away everything the layout already knows and makes the jump bigger when the
-content lands.
-
-**Look:** put the loading frame and the loaded frame side by side; the blocks should sit in the same
-places.
-
-### Reserve the space that arriving content will occupy
-
-Anything asynchronous — an image without fixed dimensions, a count badge, a banner — must have its
-space held from the first paint. Content that pushes the layout after the user has already aimed at
-something makes them press the wrong thing.
-
-**Read:** every async element has a fixed size or a min-size in the loading frame.
-**Blocking:** a layout that shifts under the pointer is a defect, not a rough edge.
-
-### Below a second, no indicator; above ten, a way to leave
-
-Response-time thresholds are old and stable: about 0.1 s reads as instant, about 1 s is where the
-user notices a wait, and around 10 s is where attention leaves. So: under a second, showing a
-spinner only makes it flash; over a second, show one; over ten, show progress *and* a way to cancel
-or leave and come back.
-
-**Read:** for each async action, the expected duration and the indicator chosen for it.
-
-### Progress means a number, not just activity
-
-An indeterminate spinner is honest only when the total is genuinely unknown. Uploads, imports and
-multi-step operations know their total — show the step or the count. "Working…" for two minutes is
-indistinguishable from a hang.
-
-**Read:** determinate operations show a step or percentage; only unknowable ones spin.
 
 ### An error state says what happened, what it means, and what to do next — in place
 

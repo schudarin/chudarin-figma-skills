@@ -32,11 +32,11 @@ and shows you the result. You change one element, it changes that element — no
 | `figma-plugin-api-rules` | nothing — it loads on its own | 377 real Plugin API failures and the way around each one. Loads before the agent writes anything into your file |
 | `figma-fix-variable-bindings` | "Variables on this page are detached, fix them" | Finds detached, orphaned and hardcoded values, shows you a report, and rebinds only after you approve it |
 
-Five `SKILL.md` files and 35 topic files behind them. Eleven of those are the Plugin API pack —
+Five `SKILL.md` files and 38 topic files behind them. Eleven of those are the Plugin API pack —
 components and variants, instances, layout and geometry, text and fonts, variables and modes,
 connectors, annotations, publishing hygiene, FigJam, the tool layer, building a screen from code. The
-other twenty-four carry the audit checklists, the per-screen briefs, the checks that run afterwards,
-and 99 UX rules routed by what the screen contains. All plain Markdown. Nothing runs on your
+other twenty-seven carry the audit checklists, the per-screen briefs, the checks that run afterwards,
+and 140 UX rules routed by what the screen contains. All plain Markdown. Nothing runs on your
 machine, nothing phones home.
 
 ## Why it's not just prompting
