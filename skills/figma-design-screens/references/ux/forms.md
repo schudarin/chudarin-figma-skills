@@ -28,7 +28,63 @@ time, so the label disappears and the state still doesn't read as inactive. Use 
 
 **Read:** the disabled variant's fill and label are bound to disabled tokens; `opacity` is 1.
 
+### Validate on leaving the field, not on every keystroke
+
+A message that appears while the user is still typing tells them they are wrong before they have
+finished being right — the email is invalid at `a@`, and saying so is noise. Validate on blur, or on
+submit. The exception runs the other way: confirmation that a constraint is *met* (a password rule,
+an available username) is useful live, because it tells the user they can stop.
+
+**Read:** which event each field's error state is tied to.
+
+### The message sits with the field, not at the top of the form
+
+A summary at the top and nothing at the field means scrolling back and forth to find which one
+failed. Where a summary is genuinely useful — long forms, screen-reader flow — it is *in addition*
+to the per-field message and each entry links to its field.
+
+**Read:** every failing field in the error frame carries its own message.
+
 ## Data entry
+
+### The field summons the right keyboard and accepts the right shape
+
+An email field brings up the email keyboard, a phone field the numeric one, a code field the numeric
+one with no autocorrect. On a mockup this is a spec line, not a visual: state the input type per
+field, because nobody can infer it from a drawing and the default is always the wrong one.
+
+**Read:** every field records its input type. *Mobile: the keyboard it produces is part of the spec.*
+
+### Never ask twice for something the product already has
+
+A value the user entered on a previous step, or that the account already holds, is prefilled and
+editable — not asked again. Re-entry is where flows lose people, and the second copy is where the
+two values diverge.
+
+**Read:** for each field, whether the value exists earlier in the flow or on the account.
+
+### Autofill has to be able to work
+
+Fields the browser or OS can fill — name, email, address, card, one-time code — must be
+recognisable ones, in the conventional order, not split into creative sub-fields. A three-part
+"custom" name control breaks autofill and buys nothing.
+
+**Read:** the fields map to standard autofill categories; the order is the conventional one.
+
+### Mark what is required, and mark it the same way every time
+
+Whichever convention the product uses — an asterisk on required, "optional" on the rest — it holds
+across the whole product. Mixed conventions mean the user has to test the form to learn its rules.
+Marking nothing works only when *every* field is required, and then the form says so once.
+
+**Read:** the required convention on the screen, against the one recorded in `design.md`.
+
+### A password field can be revealed
+
+A masked field with no reveal makes the user type blind and then retype the whole thing on a typo.
+The reveal is a toggle on the field, and it defaults to hidden.
+
+**Read:** the password field has a reveal control.
 
 ### Prefer typing to picking for values with a wide range
 

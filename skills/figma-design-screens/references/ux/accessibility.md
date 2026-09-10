@@ -62,7 +62,57 @@ description or an annotation, so the developer has something to implement.
 
 ### Motion is reducible
 
-Any animation the screen depends on has a still equivalent. If the mockup specifies motion, it also
-specifies what happens under a reduced-motion preference.
+Any animation the screen depends on has a still equivalent, and the mockup specifies it rather than
+leaving it to the build. The full rule, with what the reduced variant should be, is in
+`ux/motion.md` — it is an accessibility requirement first and a motion decision second.
 
 **Look:** the frame as a still — does it still communicate the same thing?
+
+### Headings are a hierarchy, not a set of sizes
+
+One first-level heading per screen, no skipped levels going down. Sizes are how the hierarchy
+*looks*; the levels are what it *is*, and a screen where the level is inferred from the font size
+gives whoever builds it nothing to implement.
+
+**Read:** the heading levels present on the screen, in order, with no gaps.
+
+### The focus ring is visible against every background it will land on
+
+A ring in the brand colour disappears on a brand-coloured surface. It needs its own contrast
+against each background where a focusable element sits, and enough thickness or offset to be seen —
+a 1px ring of a mid-tone is technically present and practically invisible.
+
+**Read:** the focus ring's contrast against each surface it appears on.
+
+### Nothing covers the element that just took focus
+
+Sticky headers, floating action buttons, cookie bars: when focus moves through the page, the focused
+element has to end up somewhere visible, not behind a fixed layer. This is the failure that makes a
+keyboard user's cursor vanish for three tab stops.
+
+**Look:** walk the focus order past every fixed element and say where the ring is at each stop.
+
+### Anything done by dragging has a non-drag route
+
+Reordering, sliders, drawing, swipe-to-act: a single-pointer alternative exists — buttons to move an
+item up and down, a number to type instead of a handle to drag. Dragging demands precision that not
+every user has.
+
+**Read:** every drag interaction on the screen has a named alternative.
+**Blocking:** a drag with no alternative, when the action cannot be completed any other way.
+
+### Help sits in the same place on every screen
+
+Support, contact, documentation: whatever the product offers, it appears in a consistent position
+across screens rather than migrating between the header, a footer and a floating bubble. Users learn
+one location, once.
+
+**Read:** the help affordance's position, compared with the other screens in the flow.
+
+### The layout survives larger text and looser spacing
+
+Users enlarge text and increase letter, word and line spacing. A layout built on fixed heights and
+single-line assumptions breaks: labels clip, buttons overlap, content disappears. Check the
+tightest containers with text a step or two larger than designed.
+
+**Look:** the frame with the type scale bumped up — what clips, what overlaps.

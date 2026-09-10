@@ -19,8 +19,9 @@ container grow. And where a value is truncated, the full value has to be reachab
 detail view, a tooltip, the next screen. For values whose *end* carries the meaning — file names,
 identifiers, addresses — truncate the middle, not the tail.
 
-**Read:** `textTruncation` / wrap behaviour is set explicitly on every text node that can overflow;
-`ux-rules.md` routes to the mechanics in `figma-plugin-api-rules/references/text-and-styles.md`.
+**Read:** `textTruncation` / wrap behaviour is set explicitly on every text node that can overflow.
+The Figma-side mechanics — why a truncated node still reports its full string, and how to lift the
+truncation — are in `figma-plugin-api-rules/references/text-and-styles.md`.
 
 ### Realistic content, not lorem ipsum and not "asdf"
 
