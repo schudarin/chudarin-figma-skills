@@ -11,6 +11,11 @@ The process is universal. Everything product-specific is discovered in the proje
 
 First action, every time: check `<project>/.claude/design.md`. No file → follow `references/setup.md`.
 
+Second action, before any read or write in Figma: make sure you have a link to the frame or page the
+task is about. No link in the request and none recorded in `design.md` → ask for one in a single
+line and wait. Guessing which file and page the user means is the most expensive mistake available
+here: everything after it is built in the wrong place.
+
 | Project state | Where style comes from | Skipped |
 |---|---|---|
 | Design system exists | the design system is law | direction, typography, palette phases |
