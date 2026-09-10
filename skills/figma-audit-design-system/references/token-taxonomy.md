@@ -116,6 +116,23 @@ Do not create a token when the value:
 - Exists only because a layer was manually styled once.
 - Would create a misleading semantic name.
 
+## A token names where it may be used
+
+A semantic token carries a permitted surface set, not just a role. "Interactive object" means
+buttons and controls — and explicitly *not* icons, body text or page backgrounds, even though the
+colour would technically work there. Scope in Figma (`variable.scopes`) is where this is enforced;
+the taxonomy is where it is decided.
+
+Contrast makes the same point sharper: specific steps of a ramp can be forbidden on specific
+surfaces. Where a mid-ramp step fails contrast on white, the token documentation says "use the next
+step down on light surfaces" rather than leaving each designer to discover it. A rule of that kind
+belongs next to the token, not in someone's memory.
+
+| Token | Permitted surfaces | Forbidden |
+|---|---|---|
+| `color.action.primary.bg` | buttons, interactive containers | icons, body text, page background |
+| `color.feedback.success.*-500` | filled indicators on neutral surfaces | text or icons on white — use the darker step |
+
 ## Anti-patterns
 
 Avoid:

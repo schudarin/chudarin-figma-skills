@@ -59,6 +59,33 @@ because they may be reaching for the thing inside it.
 
 **Read:** what closes it; a hover-out that discards an interactive popover is a defect.
 
+## Static info block
+
+### When a hover hint isn't enough, the explanation becomes part of the page
+
+Settings pages are the usual case: the guidance is too long for a tooltip, or the user needs it in
+front of them while they work. Then it stops being a hint and becomes a block in the layout —
+which changes where it goes and what it must contain.
+
+**Read:** each explanation over a sentence or two is a block, not a hover hint.
+
+### Its position states its scope
+
+General information about the page goes at the top. Information about one element goes directly
+under that element. Either way it aligns to the content width, because a banner that ignores the
+page's measure reads as an interruption rather than as part of the screen.
+
+**Read:** each info block's position against what it explains.
+
+### It may lose its heading, never its description — and past a few lines it collapses
+
+A block inside another block can go without a title. It cannot go without the sentence that says
+what it is for. And when the explanation runs past about four lines, it gets a collapse control and
+starts collapsed, so the guidance is available without pushing the actual settings off the screen.
+Long guidance is also where bullets earn their place over prose.
+
+**Read:** every info block has a description; ones over ~4 lines have a collapse control.
+
 ## Onboarding hints — four kinds, not one
 
 Which kind this is decides whether it blocks, whether it has steps, and whether it comes back.

@@ -116,7 +116,25 @@ user arrives cold.
 ### Breadcrumbs earn their place only below three levels of depth
 
 At two levels they duplicate the back button. Below three they start to carry real orientation
-value, and then they need to be truncated from the middle rather than the end, because the current
-page and the root are the two parts that matter.
+value. When there is no room for the full chain, collapse from the second item onward into a single
+"more" — the root and the current page are the two parts that carry the orientation, so they are the
+two that survive.
 
-**Read:** the depth of the hierarchy before adding them.
+**Read:** the depth of the hierarchy before adding them; the collapsed form keeps first and last.
+
+### The page size comes from the viewport, not from a round number
+
+How many rows per page is an arithmetic question: roughly three or four screens of scrolling is
+enough to feel substantial without turning the page into an endless one. Twenty because twenty is a
+nice number produces pages that are half empty on a large monitor and interminable on a laptop.
+
+**Read:** the page size against the row height and the viewport it is designed for.
+
+### Pagination shows as many pages as fit, and hides what it cannot do
+
+As many page links as the container holds without scrolling sideways; the rest collapse under an
+ellipsis. On the first page there is no Back and on the last there is no Forward — hidden, not
+disabled: a control that cannot ever work here is not a control, and a disabled one just makes the
+user wonder what they did wrong.
+
+**Read:** the first-page and last-page frames; the arrow that cannot apply is absent.

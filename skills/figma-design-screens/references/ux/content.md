@@ -78,6 +78,39 @@ a layout failure even when it is technically correct.
 
 **Look:** every multi-line heading at its real width, with the real string.
 
+### One accordion panel open at a time
+
+A stack of expandable rows exists to keep the page scannable. Letting several open at once returns
+the page to the wall of text the accordion was there to prevent — and the user loses the overview
+that made them able to choose. Opening one closes the last.
+
+**Read:** the accordion's states — one expanded row per frame.
+
+### A stack of avatars collapses into a count
+
+Overlapped avatars stop being readable after a handful; past that, the rest become "+7". Which
+number is the threshold is a product decision — but there is one, and it is the same everywhere in
+the product rather than per screen.
+
+**Read:** the threshold on this screen against `design.md`.
+
+### A name in a row truncates; it does not wrap
+
+In a list, a timeline or a table row, a long name takes an ellipsis at its maximum width and keeps
+the row one line tall. Wrapping one cell re-flows the whole row and breaks the alignment that makes
+the list scannable. The full value stays reachable — a tooltip, the detail view.
+
+**Read:** name cells have a max width and truncate; row height is unaffected by content length.
+
+### A timeline states its direction
+
+Newest first or oldest first is a decision the screen makes and holds; a timeline that mixes
+directions between sections, or leaves it to the data, cannot be read at all. Where both exist in
+one product, the direction follows from what the user is doing — reviewing history, or following a
+plan.
+
+**Read:** the direction is stated, and the same one in every frame of that timeline.
+
 ### The type scale is a scale
 
 `14 / 15 / 16` on one screen is drift, not hierarchy — nobody can perceive that difference as a

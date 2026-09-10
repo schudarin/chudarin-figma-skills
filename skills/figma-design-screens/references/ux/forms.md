@@ -101,6 +101,30 @@ shows "Vietnam", "Sarah", "14" with no indication of which field is which.
 
 **Read:** in the filled-form frame every field still shows its label.
 
+### A date picker opens where the user was, and refuses impossible ranges
+
+Three rules that turn a calendar from a chore into a control. It opens on the current month by
+default — but if a date is already chosen, it opens on *that* month, not back at today. Dates
+outside the permitted range are disabled and inert: a future-only field does not let the past be
+clicked, and neither half of a two-month view is an exception. And a range cannot be inverted: if
+the user picks the later date first, the field reorders the pair rather than rejecting the input.
+
+**Read:** the picker frames show the opened month, the disabled range, and the reorder behaviour.
+
+### An upload field offers both routes, and reports per file
+
+At rest it accepts a drop and opens a picker — both, because users reach for different ones. With a
+single-file limit, the chosen file replaces the control, with its own remove and replace actions.
+With several, the files list below the field, each with its own state, and the field itself stays in
+its resting form rather than looking "filled". Past a few files the list shows the next one clipped,
+so the count is visibly longer than what fits.
+
+And when the user drops more than the limit: an error that names the limit, while the files that
+*do* fit still upload. Rejecting the whole batch because one file was extra is a design decision,
+and almost never the right one.
+
+**Read:** the upload states — rest, dropping, uploading, one failed, all failed, over the limit.
+
 ## Flow steps
 
 ### A container that holds one step of a flow gets a minimum height, not a fixed one

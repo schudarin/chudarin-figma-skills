@@ -26,10 +26,11 @@ the routing table; the rules themselves live in `ux/*.md`.
 | real data — names, amounts, dates, long strings, tables, paragraphs | `ux/content.md` |
 | a place inside a flow, an overlay, a set of screens to move between | `ux/navigation.md` |
 | anything that appears, disappears, expands or moves | `ux/motion.md` |
+| any padding, gap, margin or position — so, always | `ux/spacing.md` |
 | anything at all | `ux/accessibility.md` |
 
-Load only the rows that match — except the last one, which has no exemption: every screen has
-text, targets and states.
+Load only the rows that match — except the last two, which have no exemption: every screen has
+text, targets, states and distances.
 
 **One file is not like the others.** `ux/principles.md` holds the *why* — Hick, Miller, Fitts, one
 accent per screen, what the default costs. Those change what you choose while building (step 3),
@@ -65,4 +66,7 @@ for one product is a signature trait: it goes into that project's `design.md`
 (`references/state.md`, "Signature traits"), never here — putting it here would push one product's
 taste onto every other product this skill touches.
 
-When a topic file outgrows roughly 120 lines, split it and add a row to the table above.
+Split a topic file when it stops being one topic — when the routing row would need an "and" to
+describe it. Around 120–140 lines is the signal to check, not the rule itself: `states.md` split
+into states and loading because the wait and the failure are different questions, not because of a
+line count.

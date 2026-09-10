@@ -51,6 +51,25 @@ Every deprecated token must include:
 - Migration deadline or priority
 - Reason for deprecation
 
+## Before a new component exists at all
+
+A request for a new component is answered by this gate, in order, and a "yes" anywhere above stops
+the process:
+
+1. **Can the existing feature be changed** so it satisfies the new requirement *and* still satisfies
+   the old ones? Then change it — there is no new component.
+2. **Can the existing component be extended** — a variant, a property — so it meets the new
+   requirement while continuing to meet the current ones? Then extend it.
+3. **Is the need supported by evidence** — research, usage data, a repeated request — rather than by
+   one screen's convenience? Without evidence, the answer is not yet.
+4. **Can the new component be made general enough to be used everywhere** it would apply? A
+   component that fits exactly one screen is that screen's local layout, not a system component.
+5. **Will it stay general** as the product grows, or does it encode a decision that is about to
+   change?
+
+Recording which question stopped a request is as useful as the answer: it is the evidence the next
+person needs when they ask for the same thing.
+
 ## Contribution workflow
 
 1. Identify need from product work.
