@@ -36,19 +36,30 @@ When there is one screen, uncertainty cannot be absorbed by quantity. If the bri
 
 ## Minimum skill stack
 
-| Task type | Visual skill to load |
+Every designer agent loads `figma-use` (mandatory before any `use_figma` call — the Figma plugin
+skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` in other agents) and
+`figma-plugin-api-rules`. On top of those: exactly **one** visual skill, matched to the task type —
+never the whole shelf, because more lenses on one task dilute focus rather than adding rigour.
+
+**Look before you load.** Read the list of skills available in this session, then match by task
+type. Names worth looking for, by role:
+
+| Task type | Skill names to look for |
 |---|---|
-| Mobile screens | a mobile-UI skill |
-| Web, landing pages | a web / visual-design skill |
-| Motion, transitions | a motion skill |
-| Charts, stats | a dataviz skill |
+| Mobile screens | `mobile-app-ui-design` |
+| Web, landing pages, dashboards | `frontend-design`, `impeccable` |
+| Motion, transitions | `design-motion-principles`, `emil-design-eng` |
+| Charts, stats, data-heavy screens | `dataviz` |
 
-Visual skills come from outside this pack, so their names differ from shelf to shelf. Read the list
-of skills actually available in this host and pick **one**, matched to the task type. If the shelf
-has none, say so and work without one — never invent a skill name or load a plausible-sounding
-substitute.
+These belong to other authors and are not part of this pack. The table is a hint for the search,
+not a contract: a name that is not on this session's shelf does not exist for you. Load the one you
+actually found, and only it — never a plausible-sounding substitute you haven't seen listed, and
+never install anything to get one.
 
-Every designer agent also loads `figma-use` (mandatory before any `use_figma` call — the Figma plugin skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` in other agents) and `figma-plugin-api-rules`. Load one visual skill, not the whole shelf — more lenses on one task dilute focus rather than adding rigour.
+**Nothing found — carry on without it.** Say so in one line, then work from what this skill already
+gives you: the design system, the existing screens, the references recorded in `design.md`, the copy
+and control rules in `references/ux-rules.md`, and the three checks in `references/checks.md`. A
+missing visual skill costs an extra lens on composition, not the process.
 
 ## Working a screen
 

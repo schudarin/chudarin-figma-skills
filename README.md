@@ -184,20 +184,24 @@ project and which Figma file — with Claude Code that's Anthropic's `superpower
 button", asks for the file link, and only then hands over. Any equivalent works. Without one, expect
 the agent to start on the wrong page.
 
-`figma-design-screens` also asks for one visual skill per task — a mobile-UI, web, motion or
-charts skill, whichever matches the screen. Those live outside this pack, so it names the role and
-reads whatever is installed rather than hardcoding a name. Anthropic ships one for web work:
+`figma-design-screens` also uses one visual skill per task — a mobile-UI, web, motion or charts
+skill, whichever matches the screen. It requires none of them. It reads the list of skills your
+session actually has, loads the one matching the task type, and on an empty shelf says so and works
+from your design system, your existing screens and its own copy-and-control rules instead. The
+names it looks for: `mobile-app-ui-design`, `frontend-design`, `impeccable`,
+`design-motion-principles`, `emil-design-eng`, `dataviz`, and `design-critique` for the review
+pass.
+
+One of them is Anthropic's own:
 
 ```bash
 claude plugin install frontend-design@claude-plugins-official
 ```
 
-For the other three roles the catalogues are [skills.sh](https://skills.sh) and
-[agentskills.io](https://agentskills.io). Pick by what a skill's description actually covers, and
-read its licence before installing someone else's work. I don't name specific ones here: they
-belong to their authors, who rename and retire them, and a stale recommendation is worse than
-none. Without any of it the five skills still run — you lose an extra lens on composition, not the
-process.
+The rest are third-party; the catalogues are [skills.sh](https://skills.sh) and
+[agentskills.io](https://agentskills.io). Read the licence before installing someone else's work,
+and don't worry if a name here has since moved or gone: the skill checks the shelf at run time
+rather than trusting this list, so a retired name costs nothing.
 
 Also worth having: a writing skill of your own for button labels and interface text. These skills
 place the text, they don't write it.

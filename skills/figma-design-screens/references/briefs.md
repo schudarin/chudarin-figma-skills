@@ -36,10 +36,12 @@ nine self-checks embedded at the block each one governs, follows in the next sec
 
 2. **Skills to load, minimal stack, in order.** `figma-use`, `figma-plugin-api-rules`, and exactly one
    visual skill for the task type (`SKILL.md`, "Minimum skill stack") — never the whole shelf. Name
-   the visual skill by what is actually installed here, and name what NOT to load, so the agent
-   doesn't stack lenses.
-   *Example: "Load, in order: figma-use, figma-plugin-api-rules, <the mobile-UI skill on this shelf>.
-   Do not load the web or chart ones — this is a native screen, not web or a chart."*
+   the visual skill you actually found on this session's shelf, and name what NOT to load, so the
+   agent doesn't stack lenses. Found none → say that instead, and don't leave the line blank.
+   *Example: "Load, in order: figma-use, figma-plugin-api-rules, mobile-app-ui-design. Do not load
+   frontend-design, impeccable or dataviz — this is a native screen, not web or a chart."*
+   *Example, empty shelf: "Load, in order: figma-use, figma-plugin-api-rules. No visual skill is
+   installed here — work from design.md and references/ux-rules.md."*
 
 3. **References, as absolute file paths, with an instruction to look at all of them.** A path the
    agent might skip is a reference that might as well not exist.
