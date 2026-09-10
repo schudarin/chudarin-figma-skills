@@ -18,6 +18,7 @@ the routing table; the rules themselves live in `ux/*.md`.
 | any interface text — labels, messages, button text, placeholders | `ux/copy.md` |
 | a field, a form, validation, one step of a multi-step flow | `ux/forms.md` |
 | a link, a button, a dropdown, a picker, a panel that opens | `ux/controls.md` |
+| saving, cancelling, deleting, acting on a selection | `ux/actions.md` |
 | anything at all | `ux/accessibility.md` |
 
 Load only the rows that match — except the last one, which has no exemption: every screen has
