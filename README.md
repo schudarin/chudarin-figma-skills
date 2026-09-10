@@ -19,12 +19,20 @@ Every skill is plain Markdown: `SKILL.md` + `references/` + `agents/openai.yaml`
 `<project>/.claude/skills/` (one project):
 
 ```bash
-git clone https://github.com/schudarin/chudarin-figma-skills ~/DevGIT/chudarin-figma-skills
-for s in ~/DevGIT/chudarin-figma-skills/skills/*; do ln -s "$s" ~/.claude/skills/; done
+git clone https://github.com/schudarin/chudarin-figma-skills ~/chudarin-figma-skills
+mkdir -p ~/.claude/skills
+for s in ~/chudarin-figma-skills/skills/*; do ln -sfn "$s" ~/.claude/skills/; done
 ```
 
 **Codex** — the same into `~/.agents/skills/` (all projects) or `<repo>/.agents/skills/`.
 Invoke explicitly with `$skill-name`; implicit invocation is enabled on every skill.
+
+```bash
+mkdir -p ~/.agents/skills
+for s in ~/chudarin-figma-skills/skills/*; do ln -sfn "$s" ~/.agents/skills/; done
+```
+
+Re-run either loop after `git pull` to pick up updates.
 
 **Prerequisite:** the Figma MCP server. `figma-plugin-api-rules` and `figma-design-screens` also expect
 Figma's own `figma-use` instructions loaded before the first `use_figma` call — the plugin
