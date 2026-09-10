@@ -8,6 +8,13 @@ description: Read when working with TEXT nodes — fonts and font loading, loadF
 ### fonts-bind-dont-load-and-binding-wont-always-rescue-you
 **Principle:** Apply DS text styles by binding, never by installing/loading fonts. **But** when a licensed font is absent from the MCP sandbox (a team-licensed font), `loadFontAsync`, `setTextStyleIdAsync`, AND `setBoundVariable('fontFamily', …)` all fail — binding does **not** rescue you. Author the text in **Inter** matched to the DS spec (sizes/weights/line-heights), then tell the user to select-all in desktop and apply the real text styles. Don't burn passes retrying font loads.
 **Symptom:** repeated font-load errors on the same family across several calls; `figma.listAvailableFontsAsync()` doesn't list it although existing TEXT nodes in the file use it.
+**Pattern — one probe, not three:** check availability once with `listAvailableFontsAsync()` and branch on the result; don't follow a miss with `loadFontAsync` attempts on other styles of the same family — every attempt is a `use_figma` call against the daily limit, and a family absent from the list is absent in every style.
+```js
+const fonts = await figma.listAvailableFontsAsync();
+const has = fonts.some(f => f.fontName.family === 'Gilroy');
+if (!has) { /* author in Inter to spec, hand the restyle to the user — do NOT try loadFontAsync */ }
+```
+Verified on a portfolio-slide file — a CTA button in a locally installed Gilroy: three `use_figma` calls went on probing `loadFontAsync` for Bold / Semi Bold after the family was already missing from `listAvailableFontsAsync()`; one check would have settled it.
 
 ### settextstyleidasync-swaps-the-font-mid-call-load-both-fonts-first
 **Principle:** Loading fonts is still required even when you're binding a style, not loading one. `setTextStyleIdAsync` swaps the node's font to the style's font as part of applying it — any write to the node *after* that call (e.g. clearing `textDecoration`) then fails with `Cannot write to node with unloaded font "JetBrains Mono Medium"`, because the font the node now has was never loaded. Load **both** the node's current font and the style's target font, in that order, before the style-id write.

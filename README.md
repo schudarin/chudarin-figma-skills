@@ -30,6 +30,18 @@ Invoke explicitly with `$skill-name`; implicit invocation is enabled on every sk
 Figma's own `figma-use` instructions loaded before the first `use_figma` call — the plugin
 skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` elsewhere.
 
+## Recommended alongside
+
+These skills decide *how* to work in Figma once the task is clear. They don't decide *what*
+the task is. In practice the best runs pair them with a process skill that gates the first
+action — asks which project and which Figma file before anything is touched. With Claude
+Code we use Anthropic's `superpowers` plugin (`brainstorming` fires first on "add a button",
+asks for the project and the file link, then hands over). Any equivalent "clarify before
+acting" skill works; without one, expect the agent to start from the wrong page.
+
+Also worth having: a copy/voice skill of your own for button labels and UI text — these
+skills place the text, they don't write it.
+
 ## Which skill when
 
 - "What screens do we need for this feature?" → `figma-plan-user-flows`
