@@ -110,7 +110,7 @@ for (const seg of segments) {
 ### loadfontasync-proprietary-fonts-unavailable
 **Principle:** Adobe Fonts / other proprietary-licensed fonts (e.g. Myriad Pro) are unavailable via the Plugin API — `figma.loadFontAsync({family, style})` fails even though the font is visible in the Figma UI and used in the file's existing TEXT nodes.
 **Symptom:** `figma.listAvailableFontsAsync` doesn't contain such a font (`.find` returns undefined); `figma.createText` + `setFontName({family: 'Myriad Pro',...})` fails, and even `node.characters = '...'` on an existing node with that font fails (it calls loadFontAsync under the hood too).
-**Pattern:** existing TEXT nodes with a proprietary font keep rendering correctly (the font reference is preserved); `node.clone` preserves the font. For new text — clone-based creation (clone an existing node with the needed font, edit the other properties without rewriting characters under an unloaded font), or a fallback font (e.g. Inter) with a documented mismatch, or leave a manual UI fix to a person.
+**Pattern:** existing TEXT nodes with a proprietary font keep rendering correctly (the font reference is preserved); `node.clone()` preserves the font. For new text — clone-based creation (clone an existing node with the needed font, edit the other properties without rewriting characters under an unloaded font), or a fallback font (e.g. Inter) with a documented mismatch, or leave a manual UI fix to a person.
 ```js
 // Discovery test
 const fonts = await figma.listAvailableFontsAsync();
@@ -193,7 +193,7 @@ for (const c of page.children) await apply(c);
 _An adjacent entry — the reverse of `findone-text-may-hit-hidden-sibling-not-visible-content` above: there findOne hits a HIDDEN node first (the mutation isn't visible); here — a VISIBLE node of two identically named ones, and the second visible one stays with the default placeholder._
 **Principle:** A component designed for multi-line content (e.g. a list item with "name + address", both layers named with the same generic name like `Field label`) may have BOTH text nodes `visible: true` — `instance.findOne(n => n.type === 'TEXT')` finds only the FIRST in traversal order and overrides it; the second stays with the master component's default text (a placeholder like "Label"/"Title").
 **Symptom:** after a successful (error-free) `characters` mutation on the "found" text node the screenshot shows the NEEDED text on the first line, but under it — an unrequested placeholder ("Label" etc.) as a second line — easy to take for a separate, deliberately designed sub-label of the component rather than a forgotten default.
-**Pattern:** for components originally meant for 2+ lines of text but reused for single-line content — find ALL TEXT children inside the target text frame (`textFrame.children.filter(c => c.type === 'TEXT')`), explicitly set the needed text on the first, and `visible = false` on the rest (don't "delete" — `.remove` on an instance's children is forbidden; see `instance-child-remove-not-allowed` in `instances.md`).
+**Pattern:** for components originally meant for 2+ lines of text but reused for single-line content — find ALL TEXT children inside the target text frame (`textFrame.children.filter(c => c.type === 'TEXT')`), explicitly set the needed text on the first, and `visible = false` on the rest (don't "delete" — `.remove()` on an instance's children is forbidden; see `instance-child-remove-not-allowed` in `instances.md`).
 ```js
 const textFrame = menuItem.findOne(n => n.name === 'text' && n.type === 'FRAME');
 const textNodes = textFrame.children.filter(c => c.type === 'TEXT'); // both visible:true, the same name 'Field label'
@@ -310,7 +310,7 @@ t.textTruncation = 'DISABLED'; t.maxLines = null;
 **Pattern:** don't change the code point (the symbol is right) — switch the `fontName` of that specific text node to a broad-coverage system font (Inter usually has full coverage of the symbol blocks); leave the rest of the text on the original font. When using Unicode symbols as icons (↗/♥/★ etc.) instead of vectors — check glyph by glyph with a screenshot; don't assume that because one symbol rendered, the rest from the same block will too.
 ```js
 await figma.loadFontAsync({ family: 'Inter', style: 'Black' });
-heartGlyphNode.fontName = { family: 'Inter', style: 'Black' }; // Onest Black has no U+2665 glyph
+heartGlyphNode.fontName = { family: 'Inter', style: 'Black' }; // the custom UI font has no U+2665 glyph
 ```
 
 ### measure-text-width-via-hug-toggle-fixed-restore-unsafe

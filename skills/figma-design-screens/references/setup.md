@@ -47,7 +47,7 @@ Order matters — each phase gives the next one something to answer to, instead 
 
 1. **References.** The skill gathers external references itself, lays them out in a grid, and the user marks the ones that fit by clicking. The marked set is the input to every phase below.
 2. **Three directions.** Synthesize three distinct directions from the marked references. Show them; the user picks or mixes.
-3. **Typography, then palette.** Deliberately in this order, not the reverse: a font pairing carries more character than a color choice does, so settling type first gives the palette something concrete to answer to. In a real session the answer to this step was a mix, not a single direction taken whole — a serif came from one direction and a mono from another.
+3. **Typography, then palette.** Deliberately in this order, not the reverse: a font pairing carries more character than a color choice does, so settling type first gives the palette something concrete to answer to. In practice the answer to this step is often a mix rather than a single direction taken whole — a serif from one direction, a mono from another.
 4. **Degree of character.** How far the product is willing to lean into the chosen direction — restrained or loud — in the user's own words.
 5. **Patterns, in words.** Describe recurring layout and component patterns verbally, before touching Figma. This is the raw material that later becomes the signature-traits list in `design.md`.
 6. **Screens.** Only now, build.

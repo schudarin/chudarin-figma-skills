@@ -166,7 +166,7 @@ claude plugin list                          # what is installed right now
 |---|---|---|
 | The agent says it can't reach Figma | The connection isn't authorized | Type `/mcp`, pick `figma`, log in through the browser |
 | It stops after a handful of reads | Seat limit — 6 calls a month on Starter, View or Collab | Ask for a Dev or Full seat on a paid plan |
-| Reads start failing later in the day | Figma's rate limit for the account. On a Professional plan we see roughly 70–100 read calls a day across all tools, reset at 00:00 UTC | Continue tomorrow, or split the work across days |
+| Reads start failing later in the day | Figma's rate limit for the account. On a Professional plan expect roughly 70–100 read calls a day across all tools, reset at 00:00 UTC | Continue tomorrow, or split the work across days |
 | The agent works in the wrong file or page | It had no link and guessed | Paste the link every time. Also install an "ask before acting" skill — see below |
 | The skills don't show up | The plugin is installed but the session is the old one | Quit Claude Code and start it again |
 | The agent changed something you didn't want | Figma keeps the file's history | **File → Show version history**, restore the earlier version |
@@ -175,7 +175,7 @@ claude plugin list                          # what is installed right now
 
 These skills decide *how* to work in Figma once the task is clear. They don't decide *what* the task
 is. The best runs pair them with a skill that stops the agent before the first action and asks which
-project and which Figma file — with Claude Code we use Anthropic's `superpowers`
+project and which Figma file — with Claude Code that's Anthropic's `superpowers`
 (`claude plugin install superpowers@claude-plugins-official`), where `brainstorming` fires on "add a
 button", asks for the file link, and only then hands over. Any equivalent works. Without one, expect
 the agent to start on the wrong page.

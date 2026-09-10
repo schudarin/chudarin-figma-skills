@@ -17,7 +17,7 @@ node.annotations = [{ label: 'First fact.\n\nSecond fact.', categoryId: category
 ```
 
 ### annotations-category-existing-only
-**Principle:** A category — only from those already existing in the file (`figma.annotations.getAnnotationCategoriesAsync`); don't create a new one via `addAnnotationCategoryAsync` without an explicit user request — categories are organisation-wide and adding a superfluous one litters Dev Mode for all files.
+**Principle:** A category — only from those already existing in the file (`figma.annotations.getAnnotationCategoriesAsync()`); don't create a new one via `addAnnotationCategoryAsync()` without an explicit user request — categories are organisation-wide and adding a superfluous one litters Dev Mode for all files.
 **Pattern:** find an existing one by `label` (`categories.find(c => c.label === '...')`); the choice is contextual to the fact's content (example: dynamic UI behaviour in response to a user action → `Interaction`; a structural layout decision without interactivity → `Design note`; data reflecting an entity's state → `Content`).
 
 ### annotations-content-rules
@@ -97,7 +97,7 @@ figma.currentPage.findAll(n => n.annotations && n.annotations.length > 0).forEac
 ### clone-inherited-annotations-dedup-component-vs-flow-sections
 **Principle:** When flow/scenario sections are assembled by CLONING already-annotated component shells (see `stale-annotation-survives-clone-or-redesign`), every clone drags the donor's FULL set of component Dev Mode annotations — and one component mechanic (scrolling, a button's semantics, a row variant) ends up multiplied across dozens of nodes across all scenarios. These aren't "stale" annotations (the text may be right) but DUPLICATES: one and the same fact about the component repeated N times.
 **Symptom:** an annotation walk over a group of flow sections finds K component annotations, each with identical text on M nodes (M = the number of clones) — dozens of repeats; meanwhile the flow mechanics themselves (what THIS transition demonstrates) are often not annotated at all, and new sections without clones are empty.
-**Pattern:** split into TWO SSOTs so that no annotation repeats: (1) **component mechanics** — only in the canonical component section (the component/states matrix), where they're documented anyway; (2) **flow sections carry ONLY unique flow annotations** (one per scenario transition). Procedure: an annotation walk over each section → group by text → remove the component duplicates from the clones (`node.annotations = []`), keep/fill in one flow annotation per section → duplicate the final set into a paired doc (an SSOT backup + a "documented-in" column for a two-way annotations↔docs check). The dedup strategy (remove the component ones entirely vs keep one copy) is confirmed by the owner — it changes whether a flow section is self-sufficient on mechanics.
+**Pattern:** split into TWO SSOTs so that no annotation repeats: (1) **component mechanics** — only in the canonical component section (the component/states matrix), where they're documented anyway; (2) **flow sections carry ONLY unique flow annotations** (one per scenario transition). Procedure: an annotation walk over each section → group by text → remove the component duplicates from the clones (`node.annotations = []`), keep/fill in one flow annotation per section → duplicate the final set into a paired doc (an SSOT backup + a "documented-in" column for a two-way annotations↔docs check). The dedup strategy (remove the component ones entirely vs keep one copy) is confirmed with the user — it changes whether a flow section is self-sufficient on mechanics.
 
 ### annotations-not-supported-on-section-nodes
 **Principle:** `node.annotations = [...]` on a node of type `SECTION` throws `TypeError: no such property 'annotations' on SECTION node` — Dev Mode annotations are supported on ordinary scene nodes (FRAME/INSTANCE/TEXT/COMPONENT etc.), but not on the SECTION wrapper itself.
@@ -105,15 +105,15 @@ figma.currentPage.findAll(n => n.annotations && n.annotations.length > 0).forEac
 **Pattern:** place the annotation on a suitable CHILD of the section — usually the heading TEXT/FRAME (if it already exists and already carries another annotation — just append a second entry to the existing `node.annotations` array; don't create a separate node for one annotation).
 ```js
 // ❌ TypeError
-section.annotations = [{ label: '...', categoryId: '273:0' }];
+section.annotations = [{ label: '...', categoryId }];
 
 // ✅ on the section's heading (or any other direct child of it)
 const header = section.findOne(n => n.type === 'TEXT');
-header.annotations = [...(header.annotations || []), { label: '...', categoryId: '273:0' }];
+header.annotations = [...(header.annotations || []), { label: '...', categoryId }];
 ```
 
 ### clone-carries-dev-mode-annotations-invisibly
-**Principle:** `node.clone` carries the node's Dev Mode annotations along with it, including annotations on nested nodes. In normal mode they're invisible — neither on the render nor in a structural check — so the clone "looks clean" while in Dev Mode it has foreign pins with facts about another screen, another resource and links to foreign tickets.
+**Principle:** `node.clone()` carries the node's Dev Mode annotations along with it, including annotations on nested nodes. In normal mode they're invisible — neither on the render nor in a structural check — so the clone "looks clean" while in Dev Mode it has foreign pins with facts about another screen, another resource and links to foreign tickets.
 **Symptom:** on a new screen in Dev Mode there are annotations nobody added there: the text describes the donor's behaviour ("filter by entity status", links to `entity.api.ts`), although another section was assembled. A screenshot and a tree walk by types/names show no discrepancy.
 **Pattern:** after any block transfer by clone — `await figmaHygieneSweep(clonedRoot.id, 'post-clone')` from `publishing-hygiene.md` (a single sweep: removes annotations unconditionally and checks names/description/TEXT in one pass); set your own annotations anew if the fact is relevant to the new node.
 
@@ -126,9 +126,9 @@ header.annotations = [...(header.annotations || []), { label: '...', categoryId:
 node.annotations = [...node.annotations, existing];
 
 // ✅ build anew, only the needed fields
-node.annotations = [{ label: TEXT, categoryId: '145:1' }];
+node.annotations = [{ label: TEXT, categoryId }];   // categoryId resolved by label in this same call
 ```
-Take only existing categories — `await figma.annotations.getAnnotationCategoriesAsync`; in the verified files those are `145:0 Development`, `145:1 Interaction`, `145:2 Accessibility`, `145:3 Content`.
+Take only existing categories — `await figma.annotations.getAnnotationCategoriesAsync()`. The preset set is Development / Interaction / Accessibility / Content, but their `categoryId`s differ from file to file — read them in the same call; never hardcode an id seen in another file.
 
 ### node-annotations-property-not-recursive-false-negative-on-verify
 **Principle:** `node.annotations` returns the annotations of THIS specific node ONLY — not the descendants'. A check "is there an annotation in this subtree" via `topNode.annotations.length === 0` gives a false negative if the annotation sits not on the very top node (sheet/frame) but on a nested child 2–3 levels deeper (which is typical — it's logical to place an annotation on the upload component/list itself, not on the whole sheet).
@@ -156,6 +156,6 @@ for (const item of ITEMS) {
 ```
 
 ### annotation-verify-pass-misses-language-consistency-unless-asked
-**Principle:** An LLM verifier explicitly given a text-hygiene checklist (dates/names/paths/service vocabulary/negations) and a fact check against a packet file reliably catches those specific violations — but checks nothing the checklist doesn't name literally. The text's language (conformance to the file's convention — here all annotations in Russian) isn't part of the standard hygiene list, and a verifier that didn't get an explicit "check the language" silently passes an annotation written in another language.
-**Symptom:** an adversarial verify pass over 52 annotation drafts gave 27 approved + 25 needs_revision on content/format — not one verdict mentioned that 2 of the drafts (siblings, the same wording) were entirely in English while the other 50 were in Russian. The difference was found only by a separate, non-LLM pass (a deterministic regex for Cyrillic).
+**Principle:** An LLM verifier explicitly given a text-hygiene checklist (dates/names/paths/service vocabulary/negations) and a fact check against a packet file reliably catches those specific violations — but checks nothing the checklist doesn't name literally. The text's language (conformance to the file's own convention — one language throughout) isn't part of the standard hygiene list, and a verifier that didn't get an explicit "check the language" silently passes an annotation written in another language.
+**Symptom:** an adversarial verify pass over 52 annotation drafts gave 27 approved + 25 needs_revision on content/format — not one verdict mentioned that 2 of the drafts (siblings, the same wording) were in a different language from the other 50. The difference was found only by a separate, non-LLM pass (a deterministic alphabet regex, e.g. Latin vs Cyrillic).
 **Pattern:** when composing a verify prompt for annotations — explicitly list any file-wide convention (language, tone, node-number format, etc.) the draft must obey, rather than relying on an "obvious" inconsistency being caught within a general "check for violations" assignment. Additionally — a deterministic regex sweep (Cyrillic/Latin, dates, service words) over ALL final texts before writing to Figma as a cheap last line of defence, independent of LLM verdicts.

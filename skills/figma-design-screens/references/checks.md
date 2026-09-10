@@ -39,7 +39,7 @@ color value) — not a description of the impression it gives.
 Whether the screen stayed inside how this product looks — checked against the signature-traits
 list and the saved screenshot of approved work in `design.md` (format: `references/state.md`),
 **never against general good-UI conventions**. This is the check that was missing from a real
-session: six fixes that were correct by any UI textbook — grid alignment, baseline alignment,
+run: six fixes that were correct by any UI textbook — grid alignment, baseline alignment,
 rounded corners — passed the critic and were rejected by the user outright, because the product's
 own signature was a sharp corner and a tighter baseline than the textbook calls for.
 Textbook-correct and product-correct are different questions; this check asks only the second one.
@@ -65,7 +65,7 @@ singles out one listed check as more required than the others listed beside it.
 | First showing of a new screen, direction was the agent's own call | all three |
 | After fixes | only the checks tied to the listed findings, plus "did anything else break" |
 | The user chose this direction themselves | Completeness and Accuracy only. **Taste is out of scope**: the critic does not rule on whether a device the user explicitly asked for belongs in the product — that question was already decided by the person who asked for it |
-| Edit inside approved work | Accuracy, scoped to the touched element, and Product style — both run in full; a batch of textbook-correct edits with no Product style check is exactly what got rejected in the source session. Completeness is out of scope: nothing was added, screen composition didn't change, there's nothing new to count. Reviewed **one element at a time**, never as a batch |
+| Edit inside approved work | Accuracy, scoped to the touched element, and Product style — both run in full; a batch of textbook-correct edits with no Product style check is exactly the kind that gets rejected. Completeness is out of scope: nothing was added, screen composition didn't change, there's nothing new to count. Reviewed **one element at a time**, never as a batch |
 
 ## Critic prompt (copy-paste ready)
 
@@ -81,7 +81,7 @@ Fill in the bracketed lines before sending.
 You are reviewing a Figma screen against three checks: Completeness, Accuracy, Product style
 (criteria in references/checks.md). You are the critic, not the builder — a separate pass.
 
-Skills to load: design-critique. figma-use is not required — this is a read-only pass, no
+Skills to load: design-critique, if you have it. figma-use is not required — this is a read-only pass, no
 use_figma call is made.
 
 Inputs — each line below is an absolute path, filled in before sending. A line left unfilled

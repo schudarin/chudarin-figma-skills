@@ -2,4 +2,6 @@ interface:
   display_name: Figma Audit Design System
   short_description: Audits Figma files and creates tokenized design-system documentation.
   icon: figma
-  brand_color: "#7c3aed"
+  brand_color: "#1E1E1E"
+policy:
+  allow_implicit_invocation: true

@@ -5,7 +5,7 @@ description: Read when building/rebuilding a Figma screen from application code 
 
 # screen-from-code — figma-plugin-api-rules
 
-A code→Figma methodology (extracted from an earlier internal skill of the same purpose before its archival).
+A code→Figma methodology: how to read an implemented screen and rebuild it in Figma without inventing components.
 
 ### role-mapping-not-pattern-matching
 **Principle:** Map an element's ROLE to a DS component, not the DOM structure: the React tree ≠ the DS structure; "similar" markup can be a different component.

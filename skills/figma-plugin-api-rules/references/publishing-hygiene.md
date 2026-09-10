@@ -5,7 +5,7 @@ description: Read BEFORE any text write into Figma — component descriptions, D
 
 # publishing-hygiene — what must not be written into Figma
 
-A Figma file is read by developers, QA and stakeholders outside our process. Everything we write there is a publication, not a working note. Internal process must not be visible in it at all.
+A Figma file is read by developers, QA and stakeholders outside the process that produced it. Everything written there is a publication, not a working note. Internal process must not be visible in it at all.
 
 ## Leak channels
 
@@ -26,7 +26,7 @@ All are equally visible from outside and all are checked before writing:
 - **Dates in any form** — a specific calendar date, "July", "last week".
 - **People and role pointers** — names, handles, "by the owner's decision", "at the client's request", "the designer decided".
 - **References to internal documents** — repository paths (`tasks/…`, `context/…`), names of `.md` files, section numbers of internal docs.
-- **Our process** — phase numbers, versions of our algorithms and pipelines, code names of initiatives, run identifiers.
+- **Your own process** — phase numbers, versions of your algorithms and pipelines, code names of initiatives, run identifiers.
 - **Status service vocabulary** — `SANDBOX`, `pilot`, `retry`, `WIP`, `TODO`, `TBD`, `draft`, `copy`, `v2`, "verified", "agreed", "accepted".
 - **History and negations** — "used to be", "removed because", "this is not …". A description records what the node is now.
 
@@ -36,10 +36,11 @@ All are equally visible from outside and all are checked before writing:
 - **A path to the implementation file in code** (`Sidebar.tsx`) — that's an address, not a meta-reference to process.
 - Names of properties, variants, tokens, components.
 - Product data in the layout — field values, dates in table cells, etc. That's content, not a leak.
+- **A documentation page's own version and date block** — when the page IS the design system's documentation (a cover, a changelog), that's the artefact's own metadata, not a process leak. The ban on dates covers component descriptions, annotations and product screens.
 
 ## The practical test
 
-A phrasing passes if it makes equal sense **in a year** and **to a person who took part in none of our discussions**. If understanding the phrase requires knowing who decided what and when — rewrite.
+A phrasing passes if it makes equal sense **in a year** and **to a person who took part in none of the discussions behind it**. If understanding the phrase requires knowing who decided what and when — rewrite.
 
 ## Mandatory checks
 
@@ -83,4 +84,4 @@ async function figmaHygieneSweep(nodeId, mode /* 'post-clone' | 'pre-handoff' */
 
 ## Precedent
 
-On a production admin dashboard: the `description` of a new sidebar component leaked a date, the phrase "by the owner's decision" and a path to an internal task document; on a neighbouring screen foreign annotations that arrived by clone turned up in Dev Mode. The owner found it, by eye. Rules for annotations already existed by then — but were applied only to annotations, while `description` counted as "another channel". There are many channels; the rule is one.
+On a production admin dashboard: the `description` of a new sidebar component leaked a date, the phrase "by the owner's decision" and a path to an internal task document; on a neighbouring screen foreign annotations that arrived by clone turned up in Dev Mode. A person reading the file caught it, by eye — no check did. Rules for annotations already existed by then — but were applied only to annotations, while `description` counted as "another channel". There are many channels; the rule is one.

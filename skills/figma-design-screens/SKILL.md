@@ -19,7 +19,7 @@ First action, every time: check `<project>/.claude/design.md`. No file → follo
 
 ## Improving a product that already ships
 
-When the task is to fix a live product rather than add screens to it, the current interface is captured and audited **before** anything is redrawn — `references/audit-existing.md`. That audit is what every later claim of "this is better" gets measured against, so a wrong note there becomes a wrong screen two phases on: in the source session one note in four was wrong on the first pass, and the errors were in the retelling, not in the observation.
+When the task is to fix a live product rather than add screens to it, the current interface is captured and audited **before** anything is redrawn — `references/audit-existing.md`. That audit is what every later claim of "this is better" gets measured against, so a wrong note there becomes a wrong screen two phases on: on a 64-note audit one note in four was wrong on the first pass, and the errors were in the retelling, not in the observation.
 
 Skipping the audit doesn't remove the phase, it relocates it — without a recorded defect you end up arguing whether the old screen was broken at all, with no evidence on either side.
 
@@ -37,6 +37,8 @@ When there is one screen, uncertainty cannot be absorbed by quantity. If the bri
 | Web, landing pages | `impeccable` |
 | Motion, transitions | `design-motion-principles` |
 | Charts, stats | `dataviz` |
+
+If none of these four is installed, work without a visual skill — don't invent a name.
 
 Every designer agent also loads `figma-use` (mandatory before any `use_figma` call — the Figma plugin skill in Claude Code, or the MCP resource `skill://figma/figma-use/SKILL.md` in other agents) and `figma-plugin-api-rules`. Load one visual skill, not the whole shelf — more lenses on one task dilute focus rather than adding rigour.
 

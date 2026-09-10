@@ -5,6 +5,8 @@ description: Fix detached or missing variable bindings in Figma — typography (
 
 # Figma Fix Variable Bindings
 
+**Required companions:** this skill writes through `use_figma`, so your tool's own Figma API instructions must be loaded first — the `figma-use` plugin skill in Claude Code, the MCP resource `skill://figma/figma-use/SKILL.md` elsewhere — plus `figma-plugin-api-rules` for the silent-failure patterns this workflow depends on (per-paint colour bindings, per-corner radii, read-back after every write).
+
 Figma nodes lose variable bindings when collections get orphaned, libraries update, or components migrate. This skill scans for broken/missing bindings on **typography** (text nodes), **padding/spacing** (auto-layout frames), **corner radii** (any node with radii), and **colors** (solid fills/strokes), then rebinds them to the correct library variables.
 
 ## How Bindings Work

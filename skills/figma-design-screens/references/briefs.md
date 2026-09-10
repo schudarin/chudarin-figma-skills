@@ -7,7 +7,7 @@ not repeated here; it lives whole in `references/checks.md`, run at step 4.
 
 ## Why the self-check lives inside the template, not next to it
 
-RED-phase baseline: a brief mandated an identical tab bar across three requested list-screen variants.
+Baseline failure: a brief mandated an identical tab bar across three requested list-screen variants.
 The agent that wrote it diagnosed the failure afterward, correctly, without being told:
 
 > Root cause was MY brief (I mandated the identical tab bar for all three) — but the fix is yours.
@@ -285,8 +285,8 @@ the recipe each dispatched task carries, not a separate document an agent has to
 > characters. Node ids only; for a page overview write a compact dumper that does not descend
 > into instances.
 
-**What this never applies to: the brief to the design agent, and the critic's findings.** The
-session's first rejected concept came from exactly this mistake made in the wrong place — a brief
+**What this never applies to: the brief to the design agent, and the critic's findings.** An
+early rejected concept came from exactly this mistake made in the wrong place — a brief
 that was a structural checklist in words, no pictures, run on an economy model. The user's verdict:
 "the styles change but the design barely does — sad, and not modern." `caveman`, or any other
 compression, is fair game only for the mechanic's status reports and the log lines in `design.md`
